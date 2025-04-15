@@ -1,0 +1,114 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Test Bluetooth battery level setter of reference device."""
+
+import datetime
+import logging
+import time
+
+from mobly import asserts
+from mobly import test_runner
+from mobly.controllers import android_device
+
+import bt_base_test
+from testing.mobly.platforms.bluetooth import bluetooth_reference_device
+from testing.utils import fast_pair_utils
+
+_DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
+_UI_UPDATE_TIME = datetime.timedelta(seconds=60)
+
+_BATTERY_LEVEL = 80
+
+
+class NonTwsTest(bt_base_test.BtRefBaseTest):
+  """A Mobly Test to test battery level setter of reference device."""
+
+  ad: android_device.AndroidDevice
+  ref: bluetooth_reference_device.BluetoothReferenceDeviceBase
+
+  def setup_class(self) -> None:
+    super().setup_class()
+
+    # Register an Android device controller.
+    self.ad = self.register_controller(android_device)[0]
+    fast_pair_utils.setup_android_device(self.ad)
+
+    # Register Bluetooth reference device
+    self.ref = self.register_controller(bluetooth_reference_device)[0]
+    self.ref.factory_reset()
+
+  def test_1_set_non_tws(self) -> None:
+    self.ref.disable_tws()
+
+  def test_2_set_battery_level_and_pair(self) -> None:
+    self.ref.set_battery_level(_BATTERY_LEVEL)
+
+    #################################################################
+    # Check the battery level on reference side
+    #################################################################
+    battery_level = self.ref.get_battery_level()
+    asserts.assert_equal(
+        battery_level, _BATTERY_LEVEL, 'Failed to set battery level correctly.'
+    )
+
+    #################################################################
+    # Check the battery level on phone side
+    #################################################################
+    # Pair the Android phone with ref.
+    initial_name = fast_pair_utils.assert_device_discovered(
+        self.ad, self.ref.bluetooth_address
+    )
+    self.ad.mbs.btPairDevice(self.ref.bluetooth_address.upper())
+    fast_pair_utils.assert_device_bonded_via_address(
+        self.ad, self.ref.bluetooth_address
+    )
+    self.ref.set_on_head_state(True)
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+
+    # Open system settings
+    with fast_pair_utils.open_system_settings(self.ad):
+      asserts.assert_true(
+          self.ad.uia(textContains=f'{_BATTERY_LEVEL}%').wait.exists(
+              _UI_UPDATE_TIME
+          ),
+          'Fail to find correct battery level from device list page.'
+      )
+
+      # Go to the setting page of the connected device
+      self.ad.uia(
+          res='com.android.settings:id/settings_button'
+      ).click()
+      time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+
+      # Check only one address in device detail
+      self.ad.uia(scrollable=True).scroll.down(textContains='Bluetooth address')
+      bluetooth_address_text = self.ad.uia(textContains='Bluetooth address').text
+      bluetooth_address_list = bluetooth_address_text.replace(
+          "Device's Bluetooth address:", ''
+      ).strip().split()
+      asserts.assert_equal(
+          len(bluetooth_address_list),
+          1,
+          'Fail to find correct primary ear address from device detail page.'
+      )
+
+  def teardown_test(self) -> None:
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ad.services.create_output_excerpts_all(self.current_test_info)
+    self.ref.create_output_excerpts(self.current_test_info)
+
+
+if __name__ == '__main__':
+  test_runner.main()

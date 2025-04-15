@@ -1,0 +1,9 @@
+mobly >= 1.12.1
+snippet-uiautomator >= 1.1.2
+paramiko >= 2.10.4
+pyzmq >= 15.0.0
+dacite >= 1.8.0
+absl-py >= 1.4.0
+python-dateutil >= 2.8.0
+six >= 1.16.0
+pyserial >= 3.5
