@@ -25,7 +25,6 @@ from mobly.controllers import android_device
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
 from testing.utils import bluetooth_utils
-# from testing.utils import audio_recorder
 
 _MEDIA_PLAY_DURATION = datetime.timedelta(seconds=10)
 
@@ -48,20 +47,17 @@ class MediaPlayTest(bt_base_test.BtRefBaseTest):
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
 
-    # # Init audio recorder
-    # self.recorder = audio_recorder.AudioRecorder()
-
   def setup_test(self):
     # Pair the devices
     self.ref.factory_reset()
-    bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
-    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, False)
-    self.ad.mbs.btA2dpConnect(self.ref.bluetooth_address.upper())
+    self.ref.set_component_number(1)
+    self.ref.start_pairing_mode()
 
-    # Record the music play
-    # logging.info('Start recording.')
-    # utils.create_dir(self.current_test_info.output_path)
-    # self.recorder.start(output_dir=self.current_test_info.output_path)
+    bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
+    bluetooth_utils.set_le_audio_state_on_paired_device(
+        self.ad, False, skip_if_no_button=True
+    )
+    self.ad.mbs.btA2dpConnect(self.ref.bluetooth_address.upper())
 
   def test_media_play(self):
     bt_address = self.ref.bluetooth_address.upper()
@@ -77,8 +73,6 @@ class MediaPlayTest(bt_base_test.BtRefBaseTest):
       time.sleep(_MEDIA_PLAY_DURATION.total_seconds())
 
   def teardown_test(self):
-    # self.recorder.stop()
-
     bluetooth_utils.clear_bonded_devices(self.ad)
     self.ad.services.create_output_excerpts_all(self.current_test_info)
     self.ref.create_output_excerpts(self.current_test_info)

@@ -55,13 +55,7 @@ class AncEnableTest(bt_base_test.BtRefBaseTest):
     self.ref.enable_anc()
 
     # Pair the Android phone with ref.
-    bluetooth_utils.assert_device_discovered(
-      self.ad, self.ref.bluetooth_address
-    )
-    self.ad.mbs.btPairDevice(self.ref.bluetooth_address.upper())
-    bluetooth_utils.assert_device_bonded_via_address(
-      self.ad, self.ref.bluetooth_address
-    )
+    bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
 
     self.ref.set_on_head_state(True)
     time.sleep(_WAIT_FOR_UI_UPDATE.total_seconds())

@@ -27,7 +27,7 @@ from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 
-_REPEAT_RUN_NUMBER = 5
+_REPEAT_RUN_NUMBER = 20
 
 
 class BtPairTest(bt_base_test.BtRefBaseTest):
@@ -48,6 +48,8 @@ class BtPairTest(bt_base_test.BtRefBaseTest):
 
   def setup_test(self) -> None:
     self.ref.factory_reset()
+    self.ref.set_component_number(1)
+    self.ref.start_pairing_mode()
 
   @base_test.repeat(_REPEAT_RUN_NUMBER, max_consecutive_error=3)
   def test_bt_pair(self) -> None:
@@ -58,7 +60,7 @@ class BtPairTest(bt_base_test.BtRefBaseTest):
     )
     self.ad.log.info(f'Discovered target device, name: {initial_name}')
 
-    self.ad.mbs.btPairDevice(board_address.upper())
+    bluetooth_utils.mbs_pair_with_retry(self.ad, ref_address)
     self.ad.log.info('Devices paired.')
 
     bluetooth_utils.assert_device_bonded_via_address(self.ad, board_address)

@@ -43,6 +43,7 @@ class AdvertisementTest(bt_base_test.BtRefBaseTest):
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
     self.ref.factory_reset()
+    self.ref.set_component_number(1)
 
   def test_ref_enable_pairing_then_disable(self) -> None:
     board_address = self.ref.bluetooth_address.upper()

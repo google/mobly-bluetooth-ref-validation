@@ -55,6 +55,8 @@ class BtPairMultipleTest(bt_base_test.BtRefBaseTest):
 
   def setup_test(self) -> None:
     self.ref.factory_reset()
+    self.ref.set_component_number(1)
+    self.ref.start_pairing_mode()
 
   @base_test.repeat(_REPEAT_RUN_NUMBER, max_consecutive_error=3)
   def test_bt_pair_multiple_devices(self) -> None:
@@ -64,6 +66,7 @@ class BtPairMultipleTest(bt_base_test.BtRefBaseTest):
 
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ref.start_pairing_mode()
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
     bluetooth_utils.mbs_pair_devices(self.ad_b, ref_address)
 

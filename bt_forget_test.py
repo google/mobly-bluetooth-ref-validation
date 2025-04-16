@@ -48,6 +48,8 @@ class BtForgetPairedDeviceTest(bt_base_test.BtRefBaseTest):
 
   def setup_test(self) -> None:
     self.ref.factory_reset()
+    self.ref.set_component_number(1)
+    self.ref.start_pairing_mode()
     bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
 
   def test_bt_forget(self) -> None:

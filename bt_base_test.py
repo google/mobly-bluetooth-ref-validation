@@ -57,9 +57,6 @@ class BtRefBaseTest(base_test.BaseTestClass):
       self, ads: list[android_device.AndroidDevice]
   ) -> None:
     logging.info('Capturing bugreport from android, this may take a while...')
-    # android_device.take_bug_reports(
-    #     ads, destination=self.current_test_info.output_path
-    # )
     _pull_bt_snoop_logs(ads, self.current_test_info.output_path)
 
   def on_fail(self, record: records.TestResultRecord) -> None:

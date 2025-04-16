@@ -53,13 +53,15 @@ class BtPairMultiPointTest(bt_base_test.BtRefBaseTest):
 
   def test_bt_pair_multi_point_devices(self) -> None:
     self.ref.set_multi_point()
+    self.ref.set_component_number(1)
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref.start_pairing_mode()
 
     ref_address = self.ref.bluetooth_address.upper()
 
     # First device paired and connected.
     bluetooth_utils.mbs_pair_devices(self.ad_a, ref_address)
     bluetooth_utils.set_le_audio_state_on_paired_device(self.ad_a, False)
-    # self.ref.set_on_head_state(True)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     bluetooth_utils.assert_device_connected(
         self.ad_a,

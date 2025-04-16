@@ -50,18 +50,14 @@ class AncDisableTest(bt_base_test.BtRefBaseTest):
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
     self.ref.factory_reset()
+    self.ref.set_component_number(1)
 
   def test_disable_anc(self) -> None:
     self.ref.disable_anc()
+    self.ref.start_pairing_mode()
 
     # Pair the Android phone with ref.
-    bluetooth_utils.assert_device_discovered(
-      self.ad, self.ref.bluetooth_address
-    )
-    self.ad.mbs.btPairDevice(self.ref.bluetooth_address.upper())
-    bluetooth_utils.assert_device_bonded_via_address(
-      self.ad, self.ref.bluetooth_address
-    )
+    bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
 
     self.ref.set_on_head_state(True)
     time.sleep(_WAIT_FOR_UI_UPDATE.total_seconds())

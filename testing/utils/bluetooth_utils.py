@@ -20,6 +20,7 @@ import datetime
 import logging
 import pathlib
 import time
+from typing import TypeAlias
 
 from mobly import asserts
 from mobly.controllers import android_device
@@ -27,7 +28,9 @@ from mobly.controllers.android_device_lib import adb
 
 from testing.utils import android_utils
 from testing.mobly.platforms.android.services import logcat_pubsub_service
+from testing.mobly.platforms.bluetooth import bluetooth_reference_device
 
+BtRefDevice: TypeAlias = bluetooth_reference_device.BluetoothReferenceDeviceBase
 
 # Constants for Android Fast Pair config
 _GMS_CORE_PACKAGE = 'com.google.android.gms'
@@ -146,16 +149,40 @@ def setup_android_device(
   )
 
 
+def get_tws_device(refs: list[BtRefDevice]) -> tuple[BtRefDevice, BtRefDevice]:
+  """Returns two BT reference device instances representing a pair of TWS."""
+  if len(refs) < 2:
+    raise ValueError(f'Requires at least 2 BT ref devices, got {len(refs)}')
+  if refs[0].config.get('role', '') == 'primary':
+    return (refs[0], refs[1])
+  return (refs[1], refs[0])
+
+
+def mbs_pair_with_retry(ad: android_device.AndroidDevice, address: str) -> None:
+  try:
+    ad.mbs.btPairDevice(address.upper())
+    return
+  except snippet_errors.ApiError:
+    logging.warning('BT pair failed once, retrying...')
+    pass  # Retry for the first failure
+
+  ad.mbs.btPairDevice(address.upper())
+
+
 def mbs_pair_devices(ad: android_device.AndroidDevice, address: str) -> None:
   """Pairs the Android and reference device using MBS."""
   initial_name = assert_device_discovered(ad, address)
   logging.info(f'Discovered target device, name: {initial_name}')
 
-  # # Disable FastPair halfsheet
-  # while ad.uia(text='Connect').wait.exists(_WAIT_FOR_UI_UPDATE):
-  #   ad.uia.press.back()
+  # Disable FastPair halfsheet
+  while ad.uia(res=_FAST_PAIR_HALFSHEET_IMAGE_ID).wait.exists(
+      _WAIT_FOR_FP_HALFSHEET
+  ):
+    logging.info('Found FP halfsheet, pressed.')
+    ad.uia.press.back()
+    time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
 
-  ad.mbs.btPairDevice(address.upper())
+  mbs_pair_with_retry(ad, address)
   logging.info('Devices paired.')
 
   assert_device_bonded_via_address(ad, address)
