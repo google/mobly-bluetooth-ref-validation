@@ -7,3 +7,5 @@ absl-py >= 1.4.0
 python-dateutil >= 2.8.0
 six >= 1.16.0
 pyserial >= 3.5
+pyaudio >= 0.2.14
+immutabledict >= 4.2.1

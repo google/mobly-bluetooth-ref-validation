@@ -24,7 +24,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 _WAIT_FOR_UI_TRANSLATE = datetime.timedelta(seconds=6)
@@ -44,14 +44,14 @@ class SpatialAudioEnableTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    fast_pair_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
     self.ref.factory_reset()
 
   def _assert_set_spatial_audio_state(self, target_state: bool) -> None:
-    with fast_pair_utils.open_device_detail_settings(self.ad):
+    with bluetooth_utils.open_device_detail_settings(self.ad):
       # Enable Spatial Audio by clicking the switch
       self.ad.uia(scrollable=True).scroll.down(text=_SPATIAL_AUDIO_TITLE)
       if not self.ad.uia(text=_SPATIAL_AUDIO_TITLE).wait.exists(
@@ -86,11 +86,11 @@ class SpatialAudioEnableTest(bt_base_test.BtRefBaseTest):
     self.ref.enable_spatial_audio()
 
     # Pair the Android phone with ref.
-    fast_pair_utils.assert_device_discovered(
+    bluetooth_utils.assert_device_discovered(
       self.ad, self.ref.bluetooth_address
     )
     self.ad.mbs.btPairDevice(self.ref.bluetooth_address.upper())
-    fast_pair_utils.assert_device_bonded_via_address(
+    bluetooth_utils.assert_device_bonded_via_address(
       self.ad, self.ref.bluetooth_address
     )
 

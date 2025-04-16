@@ -25,7 +25,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
 _WAIT_FOR_UI_TRANSLATE = datetime.timedelta(seconds=6)
@@ -46,7 +46,7 @@ class FastPairRingDeviceTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    fast_pair_utils.setup_android_device(self.ad, setup_fast_pair=True)
+    bluetooth_utils.setup_android_device(self.ad, setup_fast_pair=True)
 
     # Register Bluetooth reference device
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
@@ -68,11 +68,11 @@ class FastPairRingDeviceTest(bt_base_test.BtRefBaseTest):
     self.ad.adb.shell('svc bluetooth enable')
 
   def test_ring_device_active_state(self):
-    fast_pair_utils.fast_pair_android_and_ref(
+    bluetooth_utils.fast_pair_android_and_ref(
         self.ad, self.ref_primary.bluetooth_address
     )
 
-    with fast_pair_utils.open_device_detail_settings(self.ad):
+    with bluetooth_utils.open_device_detail_settings(self.ad):
       logging.info('Enter FindDevice page')
       if not self.ad.uia(
           textContains=_FIND_DEVICE_SLICE_TITLE
@@ -137,7 +137,7 @@ class FastPairRingDeviceTest(bt_base_test.BtRefBaseTest):
         [[self.ref_primary], [self.ref_secondary]],
         raise_on_exception=True,
     )
-    fast_pair_utils.clear_bonded_devices(self.ad)    
+    bluetooth_utils.clear_bonded_devices(self.ad)    
 
 
 if __name__ == '__main__':

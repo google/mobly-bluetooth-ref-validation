@@ -24,7 +24,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 
@@ -42,7 +42,7 @@ class FastPairInitialPairTwoDevicesTest(bt_base_test.BtRefBaseTest):
     # Register two Android device controllers.
     self.ad_a, self.ad_b, *_ = self.register_controller(android_device, 2)
     utils.concurrent_exec(
-        fast_pair_utils.setup_android_device,
+        bluetooth_utils.setup_android_device,
         param_list=[[self.ad_a, True], [self.ad_b, True]],
         raise_on_exception=True,
     )
@@ -56,17 +56,17 @@ class FastPairInitialPairTwoDevicesTest(bt_base_test.BtRefBaseTest):
   def test_bt_pair_multiple_devices(self) -> None:
     ref_address = self.ref.bluetooth_address.upper()
 
-    fast_pair_utils.fast_pair_android_and_ref(self.ad_a, ref_address)
+    bluetooth_utils.fast_pair_android_and_ref(self.ad_a, ref_address)
 
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ref.start_pairing_mode()
 
-    fast_pair_utils.fast_pair_android_and_ref(self.ad_b, ref_address)
+    bluetooth_utils.fast_pair_android_and_ref(self.ad_b, ref_address)
 
   def teardown_test(self) -> None:
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     utils.concurrent_exec(
-        fast_pair_utils.clear_bonded_devices,
+        bluetooth_utils.clear_bonded_devices,
         [[self.ad_a], [self.ad_b]],
         raise_on_exception=True,
     )

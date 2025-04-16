@@ -15,15 +15,15 @@
 TestBeds:
 - Name: LocalTestbed
   Controllers:
-    AndroidDevice: "*"
+    AndroidDevice: '*'
     BluetoothReferenceDevice:
     - controller_name: BtBoardDevice
       serial_port: '/dev/ttyUSB0'
       bluetooth_address: '11:22:33:44:55:66'
       dimensions:
-        role: "primary"
+        role: 'primary'
     - controller_name: BtBoardDevice
       serial_port: '/dev/ttyUSB1'
       bluetooth_address: '11:22:33:44:55:77'
       dimensions:
-        role: "secondary"
+        role: 'secondary'

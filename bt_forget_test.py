@@ -25,7 +25,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 
@@ -41,14 +41,14 @@ class BtForgetPairedDeviceTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    fast_pair_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
 
   def setup_test(self) -> None:
     self.ref.factory_reset()
-    fast_pair_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
+    bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
 
   def test_bt_forget(self) -> None:
     android_address = self.ad.mbs.btGetAddress()
@@ -68,12 +68,12 @@ class BtForgetPairedDeviceTest(bt_base_test.BtRefBaseTest):
         self.ref.get_paired_devices(),
         msg='Paired device list not empty!'
     )
-    fast_pair_utils.assert_device_disconnected(board_address)
+    bluetooth_utils.assert_device_disconnected(board_address)
 
   def teardown_test(self) -> None:
     self.ad.services.create_output_excerpts_all(self.current_test_info)
     self.ref.create_output_excerpts(self.current_test_info)
-    fast_pair_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad)
 
 
 if __name__ == '__main__':

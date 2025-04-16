@@ -23,7 +23,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 
@@ -39,22 +39,22 @@ class ConnectionDisconnectionTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    fast_pair_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
 
   def setup_test(self) -> None:
     self.ref.factory_reset()
-    fast_pair_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
-    fast_pair_utils.set_le_audio_state_on_paired_device(self.ad, False)
+    bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
+    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, False)
 
   def test_connect_disconnect(self) -> None:
     android_address = self.ad.mbs.btGetAddress()
     ref_address = self.ref.bluetooth_address.upper()
 
     # Confirm the devices are connected.
-    fast_pair_utils.assert_device_connected(
+    bluetooth_utils.assert_device_connected(
         self.ad,
         ref_address,
         fail_message=(
@@ -67,7 +67,7 @@ class ConnectionDisconnectionTest(bt_base_test.BtRefBaseTest):
     #################################################################
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ad.mbs.btA2dpDisconnect(ref_address)
-    fast_pair_utils.assert_device_disconnected(
+    bluetooth_utils.assert_device_disconnected(
         self.ad,
         ref_address,
         fail_message=(
@@ -78,7 +78,7 @@ class ConnectionDisconnectionTest(bt_base_test.BtRefBaseTest):
 
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ad.mbs.btA2dpConnect(ref_address)
-    fast_pair_utils.assert_device_connected(
+    bluetooth_utils.assert_device_connected(
         self.ad,
         ref_address,
         fail_message=(
@@ -91,7 +91,7 @@ class ConnectionDisconnectionTest(bt_base_test.BtRefBaseTest):
     #################################################################
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ref.disconnect(android_address)
-    fast_pair_utils.assert_device_disconnected(
+    bluetooth_utils.assert_device_disconnected(
         self.ad,
         ref_address,
         fail_message=(
@@ -103,7 +103,7 @@ class ConnectionDisconnectionTest(bt_base_test.BtRefBaseTest):
     # Reconnect the headset
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ref.connect(android_address)
-    fast_pair_utils.assert_device_connected(
+    bluetooth_utils.assert_device_connected(
         self.ad,
         ref_address,
         fail_message=(
@@ -116,7 +116,7 @@ class ConnectionDisconnectionTest(bt_base_test.BtRefBaseTest):
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ad.services.create_output_excerpts_all(self.current_test_info)
     self.ref.create_output_excerpts(self.current_test_info)
-    fast_pair_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
 

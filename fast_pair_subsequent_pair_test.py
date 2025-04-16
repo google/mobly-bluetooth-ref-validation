@@ -23,7 +23,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 # Constants for timeouts
 _INITIAL_PAIR_DISCOVER_TIME = datetime.timedelta(seconds=30)
@@ -51,7 +51,7 @@ class FastPairSubsequentPairTest(bt_base_test.BtRefBaseTest):
     ads = self.register_controller(android_device, 2)
     self.initial_pair_phone, self.subsequent_pair_phone = ads
     utils.concurrent_exec(
-        fast_pair_utils.setup_android_device,
+        bluetooth_utils.setup_android_device,
         [[self.initial_pair_phone, True], [self.subsequent_pair_phone, True]],
         raise_on_exception=True,
     )
@@ -83,7 +83,7 @@ class FastPairSubsequentPairTest(bt_base_test.BtRefBaseTest):
     self.initial_pair_phone.uia(text='Done').click()
 
     # Confirm the first phone and reference device are connected.
-    fast_pair_utils.assert_device_bonded_via_address(
+    bluetooth_utils.assert_device_bonded_via_address(
         self.initial_pair_phone,
         self.ref.bluetooth_address,
         fail_message=(
@@ -108,7 +108,7 @@ class FastPairSubsequentPairTest(bt_base_test.BtRefBaseTest):
     )
 
     # Confirm the second phone and reference device are connected.
-    fast_pair_utils.assert_device_bonded_via_address(
+    bluetooth_utils.assert_device_bonded_via_address(
         self.subsequent_pair_phone,
         self.ref.bluetooth_address,
         timeout=_SUBSEQUENT_PAIR_CONNECTION_TIME,
@@ -120,7 +120,7 @@ class FastPairSubsequentPairTest(bt_base_test.BtRefBaseTest):
 
   def teardown_test(self):
     utils.concurrent_exec(
-        fast_pair_utils.clear_bonded_devices,
+        bluetooth_utils.clear_bonded_devices,
         [[self.initial_pair_phone], [self.subsequent_pair_phone]],
         raise_on_exception=True,
     )

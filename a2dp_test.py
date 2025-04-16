@@ -24,7 +24,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 # from testing.utils import audio_recorder
 
 _MEDIA_PLAY_DURATION = datetime.timedelta(seconds=10)
@@ -43,7 +43,7 @@ class MediaPlayTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller
     self.ad = self.register_controller(android_device)[0]
-    fast_pair_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
@@ -54,8 +54,8 @@ class MediaPlayTest(bt_base_test.BtRefBaseTest):
   def setup_test(self):
     # Pair the devices
     self.ref.factory_reset()
-    fast_pair_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
-    fast_pair_utils.set_le_audio_state_on_paired_device(self.ad, False)
+    bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
+    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, False)
     self.ad.mbs.btA2dpConnect(self.ref.bluetooth_address.upper())
 
     # Record the music play
@@ -67,10 +67,10 @@ class MediaPlayTest(bt_base_test.BtRefBaseTest):
     bt_address = self.ref.bluetooth_address.upper()
 
     # Start audio playing
-    with fast_pair_utils.push_and_play_audio_on_android(
+    with bluetooth_utils.push_and_play_audio_on_android(
         self.ad, _AUDIO_FILE_PATH
     ):
-      fast_pair_utils.assert_wait_condition_true(
+      bluetooth_utils.assert_wait_condition_true(
           lambda: self.ad.mbs.btIsA2dpPlaying(bt_address),
           fail_message='Failed to start playing media.',
       )
@@ -79,7 +79,7 @@ class MediaPlayTest(bt_base_test.BtRefBaseTest):
   def teardown_test(self):
     # self.recorder.stop()
 
-    fast_pair_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad)
     self.ad.services.create_output_excerpts_all(self.current_test_info)
     self.ref.create_output_excerpts(self.current_test_info)
 

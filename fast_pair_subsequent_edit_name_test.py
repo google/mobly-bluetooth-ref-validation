@@ -26,7 +26,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
 _FAST_PAIR_PAIR_TIME = datetime.timedelta(seconds=30)
@@ -59,7 +59,7 @@ class FastPairSubsequentEditNameTest(bt_base_test.BtRefBaseTest):
     ads = self.register_controller(android_device, 2)
     self.initial_pair_phone, self.subsequent_pair_phone = ads
     utils.concurrent_exec(
-        fast_pair_utils.setup_android_device,
+        bluetooth_utils.setup_android_device,
         [[self.initial_pair_phone, True], [self.subsequent_pair_phone, True]],
         raise_on_exception=True,
     )
@@ -86,7 +86,7 @@ class FastPairSubsequentEditNameTest(bt_base_test.BtRefBaseTest):
           tag=_FAST_PAIR_TAG,
           level='I',
       ) as update_name_event:
-        fast_pair_utils.fast_pair_android_and_ref(
+        bluetooth_utils.fast_pair_android_and_ref(
             self.initial_pair_phone, self.ref.bluetooth_address
         )
         asserts.assert_true(
@@ -115,7 +115,7 @@ class FastPairSubsequentEditNameTest(bt_base_test.BtRefBaseTest):
     )
 
     device_rename_text = f'{self.device_name}_rename'
-    with fast_pair_utils.open_system_settings(self.initial_pair_phone):
+    with bluetooth_utils.open_system_settings(self.initial_pair_phone):
       asserts.assert_true(
           self.initial_pair_phone.uia(textContains=self.device_name).wait.exists(
               _WAIT_FOR_UI_UPDATE
@@ -167,7 +167,7 @@ class FastPairSubsequentEditNameTest(bt_base_test.BtRefBaseTest):
           tag=_FAST_PAIR_TAG,
           level='I',
       ) as initial_name_event:
-      fast_pair_utils.fast_pair_subsequent_pair_android_and_ref(
+      bluetooth_utils.fast_pair_subsequent_pair_android_and_ref(
           self.subsequent_pair_phone, self.ref.bluetooth_address
       )
       asserts.assert_true(
@@ -194,7 +194,7 @@ class FastPairSubsequentEditNameTest(bt_base_test.BtRefBaseTest):
 
   def teardown_class(self):
     utils.concurrent_exec(
-        fast_pair_utils.clear_bonded_devices,
+        bluetooth_utils.clear_bonded_devices,
         [[self.initial_pair_phone], [self.subsequent_pair_phone]],
         raise_on_exception=True,
     )

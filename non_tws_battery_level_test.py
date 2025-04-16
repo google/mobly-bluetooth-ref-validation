@@ -24,7 +24,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 _UI_UPDATE_TIME = datetime.timedelta(seconds=60)
@@ -43,7 +43,7 @@ class NonTwsTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    fast_pair_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
@@ -67,18 +67,18 @@ class NonTwsTest(bt_base_test.BtRefBaseTest):
     # Check the battery level on phone side
     #################################################################
     # Pair the Android phone with ref.
-    initial_name = fast_pair_utils.assert_device_discovered(
+    initial_name = bluetooth_utils.assert_device_discovered(
         self.ad, self.ref.bluetooth_address
     )
     self.ad.mbs.btPairDevice(self.ref.bluetooth_address.upper())
-    fast_pair_utils.assert_device_bonded_via_address(
+    bluetooth_utils.assert_device_bonded_via_address(
         self.ad, self.ref.bluetooth_address
     )
     self.ref.set_on_head_state(True)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
     # Open system settings
-    with fast_pair_utils.open_system_settings(self.ad):
+    with bluetooth_utils.open_system_settings(self.ad):
       asserts.assert_true(
           self.ad.uia(textContains=f'{_BATTERY_LEVEL}%').wait.exists(
               _UI_UPDATE_TIME

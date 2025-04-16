@@ -22,7 +22,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 
@@ -38,7 +38,7 @@ class AdvertisementTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    fast_pair_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
@@ -57,7 +57,7 @@ class AdvertisementTest(bt_base_test.BtRefBaseTest):
       return board_address.upper() in [
           d['Address'] for d in self.ad.mbs.btDiscoverAndGetResults()
       ]
-    fast_pair_utils.assert_wait_condition_true(
+    bluetooth_utils.assert_wait_condition_true(
         ref_discovered_by_phone,
         fail_message='Bluetooth refernece device is not discovered',
     )
@@ -74,7 +74,7 @@ class AdvertisementTest(bt_base_test.BtRefBaseTest):
       return board_address.upper() not in [
           d['Address'] for d in self.ad.mbs.btDiscoverAndGetResults()
       ]
-    fast_pair_utils.assert_wait_condition_true(
+    bluetooth_utils.assert_wait_condition_true(
         ref_not_discovered_by_phone,
         fail_message='Bluetooth reference device is still discovered',
     )

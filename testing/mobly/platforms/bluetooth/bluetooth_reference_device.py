@@ -72,12 +72,14 @@ from mobly import signals
 
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device_base
 from testing.mobly.platforms.bluetooth import example_device
+from testing.mobly.platforms.bluetooth.bes import bes_device
 
 # The supported device class list.
 # Import new device class as denpendency. Then add device class to this list 
 # in the format of: `class_name.MOBLY_CONTROLLER_CONFIG_NAME: class_name`
 SUPPORTED_DEVICE_CLASSES = immutabledict.immutabledict({
-    example_device.MOBLY_CONTROLLER_CONFIG_NAME: example_device
+    example_device.MOBLY_CONTROLLER_CONFIG_NAME: example_device,
+    bes_device.MOBLY_CONTROLLER_CONFIG_NAME: bes_device,
 })
 
 # This is used in the config file located in the test lab's home directory.

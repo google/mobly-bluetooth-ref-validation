@@ -65,8 +65,8 @@ locate and instantiate the controller class in the test.
       - Name: LocalTestbed
         Controllers:
           AndroidDevice:
-            - serial: "0000000000000A"
-            - serial: "0000000000000B"
+            - serial: '0000000000000A'
+            - serial: '0000000000000B'
       ```
 
     + Configure the Bluetooth reference device in each file. Fill the
@@ -77,8 +77,8 @@ locate and instantiate the controller class in the test.
       - Name: LocalTestbed
         Controllers:
           AndroidDevice:
-            - serial: "0000000000000A"
-            - serial: "0000000000000B"
+            - serial: '0000000000000A'
+            - serial: '0000000000000B'
           BluetoothReferenceDevice:
           - controller_name: BtBoardDevice
             serial_port: '/dev/ttyUSB0'
@@ -93,14 +93,14 @@ locate and instantiate the controller class in the test.
     - Name: LocalTestbed
       Controllers:
         AndroidDevice:
-          - serial: "0000000000000A"
-          - serial: "0000000000000B"
+          - serial: '0000000000000A'
+          - serial: '0000000000000B'
         BluetoothReferenceDevice:
           - controller_name: BtBoardDevice
             serial_port: '/dev/ttyUSB0'
             bluetooth_address: '11:22:33:44:55:66'
     MoblyParams:
-      LogPath: "C:\User\<username>\AppData\Local\Temp"
+      LogPath: 'C:\User\<username>\AppData\Local\Temp'
     ```
 
 1.  Save the configure YAML file.

@@ -26,7 +26,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 
@@ -46,7 +46,7 @@ class SetNameAddressTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    fast_pair_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
@@ -82,7 +82,7 @@ class SetNameAddressTest(bt_base_test.BtRefBaseTest):
     # Check the BT ref name and address from phone side
     #################################################################
 
-    fast_pair_utils.assert_device_discovered(
+    bluetooth_utils.assert_device_discovered(
         self.ad,
         _TARGET_ADDRESS,
         fail_message='Bluetooth refernece device address not discovered',
@@ -95,7 +95,7 @@ class SetNameAddressTest(bt_base_test.BtRefBaseTest):
       logging.info('Discovered: %s', name_list)
       return bluetooth_name in name_list or ble_name in name_list
 
-    fast_pair_utils.assert_wait_condition_true(
+    bluetooth_utils.assert_wait_condition_true(
         bt_name_discovered,
         fail_message=f'Failed to discover target BT name {bluetooth_name}.',
     )

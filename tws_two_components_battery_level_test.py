@@ -25,7 +25,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=3)
 _WAIT_FOR_UI_TRANSLATE = datetime.timedelta(seconds=6)
@@ -50,7 +50,7 @@ class TwsTwoComponentsTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    fast_pair_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad)
 
     # Register Bluetooth reference device
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
@@ -84,16 +84,16 @@ class TwsTwoComponentsTest(bt_base_test.BtRefBaseTest):
     self.ref_primary.get_battery_level()
 
     # Pair the Android phone with ref.
-    initial_name = fast_pair_utils.assert_device_discovered(
+    initial_name = bluetooth_utils.assert_device_discovered(
       self.ad, self.ref_primary.bluetooth_address
     )
     self.ad.mbs.btPairDevice(self.ref_primary.bluetooth_address.upper())
-    fast_pair_utils.assert_device_bonded_via_address(
+    bluetooth_utils.assert_device_bonded_via_address(
       self.ad, self.ref_primary.bluetooth_address
     )
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
-    with fast_pair_utils.open_system_settings(self.ad):
+    with bluetooth_utils.open_system_settings(self.ad):
       # Check battery level of each ear
       asserts.assert_true(
           self.ad.uia(textContains=f'L: {_BATTERY_LEFT}%').wait.exists(
@@ -109,7 +109,7 @@ class TwsTwoComponentsTest(bt_base_test.BtRefBaseTest):
       )
 
   def test_3_check_paired_device_detail(self):
-    with fast_pair_utils.open_device_detail_settings(self.ad):
+    with bluetooth_utils.open_device_detail_settings(self.ad):
       # Check two address in device detail
       self.ad.uia(scrollable=True).scroll.down(textContains='Bluetooth address')
       bluetooth_address_text = self.ad.uia(textContains='Bluetooth address').text

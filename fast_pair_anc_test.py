@@ -25,7 +25,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 _WAIT_FOR_UI_TRANSLATE = datetime.timedelta(seconds=6)
@@ -55,7 +55,7 @@ class FastPairAncTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    fast_pair_utils.setup_android_device(self.ad, setup_fast_pair=True)
+    bluetooth_utils.setup_android_device(self.ad, setup_fast_pair=True)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
@@ -94,7 +94,7 @@ class FastPairAncTest(bt_base_test.BtRefBaseTest):
         tag=_FAST_PAIR_TAG,
         level='I',
     ) as anc_event:
-      fast_pair_utils.fast_pair_android_and_ref(
+      bluetooth_utils.fast_pair_android_and_ref(
           self.ad, self.ref.bluetooth_address
       )
       self.paired = True
@@ -132,7 +132,7 @@ class FastPairAncTest(bt_base_test.BtRefBaseTest):
     self.ref.set_on_head_state(True)
     time.sleep(_WAIT_FOR_UI_UPDATE.total_seconds())
 
-    with fast_pair_utils.open_device_detail_settings(self.ad):
+    with bluetooth_utils.open_device_detail_settings(self.ad):
       # Check ANC slice shown in device detail and enabled
       asserts.assert_true(
           self.ad.uia(text=_ANC_SLICE_TITLE).wait.exists(
@@ -154,7 +154,7 @@ class FastPairAncTest(bt_base_test.BtRefBaseTest):
     self.ref.set_on_head_state(False)
     time.sleep(_WAIT_FOR_UI_UPDATE.total_seconds())
 
-    with fast_pair_utils.open_device_detail_settings(self.ad):
+    with bluetooth_utils.open_device_detail_settings(self.ad):
       self._verify_anc_slice_gray_out(is_gray_out=True)
       time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
@@ -167,7 +167,7 @@ class FastPairAncTest(bt_base_test.BtRefBaseTest):
     self.ref.disconnect(self.ad.mbs.btGetAddress())
     time.sleep(_WAIT_FOR_UI_UPDATE.total_seconds())
 
-    with fast_pair_utils.open_device_detail_settings(self.ad):
+    with bluetooth_utils.open_device_detail_settings(self.ad):
       asserts.assert_false(
           self.ad.uia(text=_ANC_SLICE_TITLE).wait.exists(
               _WAIT_FOR_UI_TRANSLATE

@@ -23,7 +23,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
 _FAST_PAIR_DISCOVER_TIME = datetime.timedelta(seconds=30)
@@ -50,7 +50,7 @@ class SetFastPairParamsTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    fast_pair_utils.setup_android_device(self.ad, setup_fast_pair=True)
+    bluetooth_utils.setup_android_device(self.ad, setup_fast_pair=True)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
@@ -71,7 +71,7 @@ class SetFastPairParamsTest(bt_base_test.BtRefBaseTest):
         tag=_FAST_PAIR_TAG,
         level='I',
     ) as discovery_event:
-      fast_pair_utils.clear_android_fast_pair_cache(self.ad)
+      bluetooth_utils.clear_android_fast_pair_cache(self.ad)
       asserts.assert_true(
           discovery_event.wait(timeout=_FAST_PAIR_DISCOVER_TIME),
           f'Fail to find device with model ID {_MODEL_ID}.'
@@ -95,7 +95,7 @@ class SetFastPairParamsTest(bt_base_test.BtRefBaseTest):
     self.ad.uia(text='Done').click()
 
     # Confirm the devices are connected.
-    fast_pair_utils.assert_device_bonded_via_address(
+    bluetooth_utils.assert_device_bonded_via_address(
         self.ad,
         self.ref.bluetooth_address,
     )

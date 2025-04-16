@@ -16,8 +16,8 @@ TestBeds:
 - Name: LocalTestbed
   Controllers:
     AndroidDevice:
-    - serial: "0000000000000A"
-    - serial: "0000000000000B"
+    - serial: '0000000000000A'
+    - serial: '0000000000000B'
     BluetoothReferenceDevice:
     - controller_name: BtBoardDevice
       serial_port: '/dev/ttyUSB0'

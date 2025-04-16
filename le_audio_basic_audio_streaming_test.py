@@ -25,7 +25,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 # from testing.utils import audio_recorder
 
 _AUDIO_FILE_PATH = 'testing/assets/test_audio_music.wav'
@@ -50,7 +50,7 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    fast_pair_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
@@ -61,13 +61,13 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
 
   def test_1_pair_ref_and_enable_le_audio(self):
     # Discover and pair the devices
-    fast_pair_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
+    bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
     self.ref.set_on_head_state(True)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
     # Enable LE Audio on Android
     self.ad.log.info('Enabling LE Audio...')
-    fast_pair_utils.set_le_audio_state_on_paired_device(self.ad, True)
+    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, True)
     self.ad.log.info('LE Audio enabled.')
     self.lea_enabled = True
 
@@ -83,7 +83,7 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
 
     # Start audio playing
     self.ad.log.info('Start playing audio...')
-    with fast_pair_utils.push_and_play_audio_on_android(
+    with bluetooth_utils.push_and_play_audio_on_android(
         self.ad, _AUDIO_FILE_PATH
     ):
       # Check the ASE state is Streaming
@@ -103,7 +103,7 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
     self.ref.create_output_excerpts(self.current_test_info)
 
   def teardown_class(self):
-    fast_pair_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad)
     # self.recorder.stop()
 
 if __name__ == '__main__':

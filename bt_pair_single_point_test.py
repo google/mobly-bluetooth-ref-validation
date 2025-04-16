@@ -24,7 +24,7 @@ from mobly.controllers import android_device
 
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
-from testing.utils import fast_pair_utils
+from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 
@@ -42,7 +42,7 @@ class BtPairSinglePointTest(bt_base_test.BtRefBaseTest):
     # Register an Android device controller.
     self.ad_a, self.ad_b, *_ = self.register_controller(android_device, 2)
     utils.concurrent_exec(
-        fast_pair_utils.setup_android_device,
+        bluetooth_utils.setup_android_device,
         param_list=[[self.ad_a], [self.ad_b]],
         raise_on_exception=True,
     )
@@ -57,11 +57,11 @@ class BtPairSinglePointTest(bt_base_test.BtRefBaseTest):
     ref_address = self.ref.bluetooth_address.upper()
 
     # First device paired and connected.
-    fast_pair_utils.mbs_pair_devices(self.ad_a, ref_address)
-    fast_pair_utils.set_le_audio_state_on_paired_device(self.ad_a, False)
+    bluetooth_utils.mbs_pair_devices(self.ad_a, ref_address)
+    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad_a, False)
     # self.ref.set_on_head_state(True)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-    fast_pair_utils.assert_device_connected(
+    bluetooth_utils.assert_device_connected(
         self.ad_a,
         ref_address,
         fail_message=(
@@ -73,17 +73,17 @@ class BtPairSinglePointTest(bt_base_test.BtRefBaseTest):
     self.ref.start_pairing_mode()
 
     # Second device paired and connected. First device lost connection.
-    fast_pair_utils.mbs_pair_devices(self.ad_b, ref_address)
-    fast_pair_utils.set_le_audio_state_on_paired_device(self.ad_b, False)
+    bluetooth_utils.mbs_pair_devices(self.ad_b, ref_address)
+    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad_b, False)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-    fast_pair_utils.assert_device_connected(
+    bluetooth_utils.assert_device_connected(
         self.ad_b,
         ref_address,
         fail_message=(
             '[Second Pair] Fail to confirm second device connected.'
         ),
     )
-    fast_pair_utils.assert_device_disconnected(
+    bluetooth_utils.assert_device_disconnected(
         self.ad_a,
         ref_address,
         fail_message=(
@@ -94,7 +94,7 @@ class BtPairSinglePointTest(bt_base_test.BtRefBaseTest):
   def teardown_test(self) -> None:
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     utils.concurrent_exec(
-        fast_pair_utils.clear_bonded_devices,
+        bluetooth_utils.clear_bonded_devices,
         [[self.ad_a], [self.ad_b]],
         raise_on_exception=True,
     )
