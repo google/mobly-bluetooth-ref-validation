@@ -21,6 +21,7 @@ import uuid
 
 from mobly import asserts
 from mobly import test_runner
+from mobly import utils
 from mobly.controllers import android_device
 
 import bt_base_test
@@ -44,11 +45,12 @@ _ANC_MODE_DISCOVERED_PATTERN = (
 )
 
 
-class FastPairAncTest(bt_base_test.BtRefBaseTest):
+class FastPairAncTwsTest(bt_base_test.BtRefBaseTest):
   """A Mobly Test to test Fast Pair personalize name feature."""
 
   ad: android_device.AndroidDevice
-  ref: bluetooth_reference_device.BluetoothReferenceDeviceBase
+  ref_primary: bluetooth_reference_device.BluetoothReferenceDeviceBase
+  ref_secondary: bluetooth_reference_device.BluetoothReferenceDeviceBase
 
   def setup_class(self) -> None:
     super().setup_class()
@@ -63,8 +65,9 @@ class FastPairAncTest(bt_base_test.BtRefBaseTest):
         enable_le_audio=True,
     )
 
-    # Register Bluetooth reference device
-    self.ref = self.register_controller(bluetooth_reference_device)[0]
+    # Register Bluetooth reference devices.
+    refs = self.register_controller(bluetooth_reference_device, min_number=2)
+    self.ref_primary, self.ref_secondary = bluetooth_utils.get_tws_device(refs)
 
   def _verify_anc_slice_gray_out(
       self,
@@ -90,11 +93,20 @@ class FastPairAncTest(bt_base_test.BtRefBaseTest):
 
   def test_1_enable_anc_and_pair(self) -> None:
     self.ad.adb.shell('svc bluetooth disable')
-    self.ref.factory_reset()
-    self.ref.set_component_number(1)
-    self.ref.enable_anc()
-    self.ref.start_pairing_mode()
+    utils.concurrent_exec(
+        lambda d: d.factory_reset(),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
+    )
+    utils.concurrent_exec(
+        lambda d: d.pair_tws(),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
+    )
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref_primary.set_component_number(2)
+    self.ref_primary.enable_anc()
+    self.ref_primary.start_pairing_mode()
     self.ad.adb.shell('svc bluetooth enable')
 
     with self.ad.services.logcat_pubsub.event(
@@ -103,7 +115,7 @@ class FastPairAncTest(bt_base_test.BtRefBaseTest):
         level='I',
     ) as anc_event:
       bluetooth_utils.fast_pair_android_and_ref(
-          self.ad, self.ref.bluetooth_address
+          self.ad, self.ref_primary.bluetooth_address
       )
       self.paired = True
       asserts.assert_true(
@@ -129,7 +141,7 @@ class FastPairAncTest(bt_base_test.BtRefBaseTest):
                 f'{supported_anc_modes}'
             ),
         )
-      asserts.assert_greater(index, 0, 'ANC index should not be 0')
+      asserts.assert_greater(active_index, 0, 'ANC index should not be 0')
 
   def test_2_anc_ui_enable_when_on_head(self) -> None:
     asserts.skip_if(
@@ -137,7 +149,7 @@ class FastPairAncTest(bt_base_test.BtRefBaseTest):
         'Devices not paired. Skip following steps.',
     )
 
-    self.ref.set_on_head_state(True)
+    self.ref_primary.set_on_head_state(True)
     time.sleep(_WAIT_FOR_UI_UPDATE.total_seconds())
 
     with bluetooth_utils.open_device_detail_settings(self.ad):
@@ -153,26 +165,48 @@ class FastPairAncTest(bt_base_test.BtRefBaseTest):
       time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
       self._verify_anc_slice_gray_out(is_gray_out=False)
 
-  def test_3_anc_ui_gray_out_when_not_on_head(self):
+  def test_3_anc_ui_change_when_mode_change(self):
     asserts.skip_if(
         not hasattr(self, 'has_anc_slice'),
         'ANC slice not shown in step 2. Skip following steps.',
     )
 
-    self.ref.set_on_head_state(False)
+    self.ref_primary.set_anc_mode('transparent')
+    time.sleep(_WAIT_FOR_UI_UPDATE.total_seconds())
+
+    with bluetooth_utils.open_device_detail_settings(self.ad):
+      # Check ANC slice shown in device detail and enabled
+      asserts.assert_true(
+          self.ad.uia(text='Transparency mode on').wait.exists(
+              _WAIT_FOR_UI_TRANSLATE
+          ),
+          'Fail to set ANC mode to transparent from board',
+      )
+
+  def test_4_anc_ui_gray_out_when_not_on_head(self):
+    asserts.skip_if(
+        not hasattr(self, 'has_anc_slice'),
+        'ANC slice not shown in step 2. Skip following steps.',
+    )
+
+    self.ref_primary.set_on_head_state(False)
     time.sleep(_WAIT_FOR_UI_UPDATE.total_seconds())
 
     with bluetooth_utils.open_device_detail_settings(self.ad):
       self._verify_anc_slice_gray_out(is_gray_out=True)
       time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
-  def test_step_4_hide_anc_slice_when_disconnected(self):
+  def test_step_5_hide_anc_slice_when_disconnected(self):
     asserts.skip_if(
         not hasattr(self, 'has_anc_slice'),
         'ANC slice not shown in step 2. Skip following steps.',
     )
 
-    self.ref.disconnect(self.ad.mbs.btGetAddress())
+    utils.concurrent_exec(
+        lambda d: d.disconnect(self.ad.mbs.btGetAddress()),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
+    )
     time.sleep(_WAIT_FOR_UI_UPDATE.total_seconds())
 
     with bluetooth_utils.open_device_detail_settings(self.ad):
@@ -187,7 +221,11 @@ class FastPairAncTest(bt_base_test.BtRefBaseTest):
 
   def teardown_test(self) -> None:
     self.ad.services.create_output_excerpts_all(self.current_test_info)
-    self.ref.create_output_excerpts(self.current_test_info)
+    utils.concurrent_exec(
+        lambda d: d.create_output_excerpts(self.current_test_info),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
+    )
 
   def teardown_class(self) -> None:
     bluetooth_utils.clear_bonded_devices(self.ad)

@@ -26,7 +26,6 @@ from mobly.controllers import android_device
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
 from testing.utils import bluetooth_utils
-# from testing.utils import audio_recorder
 
 _YOUTUBE_VIDEO_ID = 'UQIlEgvTKY4'
 
@@ -43,26 +42,41 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
   """Test class for LE Audio control test on Android + reference device."""
 
   ad: android_device.AndroidDevice
-  ref: bluetooth_reference_device.BluetoothReferenceDeviceBase
+  ref_primary: bluetooth_reference_device.BluetoothReferenceDeviceBase
+  ref_secondary: bluetooth_reference_device.BluetoothReferenceDeviceBase
 
-  def setup_class(self):
+  def setup_class(self) -> None:
     super().setup_class()
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(
+        self.ad, record_screen=True, enable_wifi=True, enable_le_audio=True
+    )
 
-    # Register Bluetooth reference device
-    self.ref = self.register_controller(bluetooth_reference_device)[0]
-    self.ref.factory_reset()
+    # Register Bluetooth reference devices.
+    refs = self.register_controller(bluetooth_reference_device, min_number=2)
+    self.ref_primary, self.ref_secondary = bluetooth_utils.get_tws_device(refs)
 
-    # # Init audio recorder
-    # self.recorder = audio_recorder.AudioRecorder()
+    utils.concurrent_exec(
+        lambda d: d.factory_reset(),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
+    )
+    utils.concurrent_exec(
+        lambda d: d.pair_tws(),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
+    )
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref_primary.start_pairing_mode()
 
-  def test_1_pair_ref_and_enable_le_audio(self):
+  def test_1_pair_bes_and_enable_le_audio(self):
     # Discover and pair the devices
-    bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
-    self.ref.set_on_head_state(True)
+    bluetooth_utils.mbs_pair_devices(
+        self.ad, self.ref_primary.bluetooth_address
+    )
+    self.ref_primary.set_on_head_state(True)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
     # Enable LE Audio on Android
@@ -76,10 +90,6 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
         not hasattr(self, 'lea_enabled'),
         'LEA not enabled. Skip following steps.',
     )
-    # Record the music play
-    # logging.info('Start recording.')
-    # utils.create_dir(self.current_test_info.output_path)
-    # self.recorder.start(output_dir=self.current_test_info.output_path)
 
     # Open Youtube and start playing video.
     # We can't use Mobly snippet to play audio here because the audio played by
@@ -101,11 +111,13 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
       # Volume control
       #################################################################
       target_volume = 100
-      self.ref.set_volume(target_volume)
-      asserts.assert_equal(self.ref.get_volume(), target_volume)
+      self.ref_primary.set_volume(target_volume)
+      asserts.assert_almost_equal(
+          self.ref.get_ble_volume(), target_volume, delta=5
+      )
 
       initial_volume = self.ad.mbs.getMusicVolume()
-      self.ref.volume_up()
+      self.ref_primary.volume_up()
       bluetooth_utils.assert_wait_condition_true(
           lambda: self.ad.mbs.getMusicVolume() > initial_volume,
           fail_message='Failed to increase media volume.',
@@ -113,7 +125,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
 
       time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
       initial_volume = self.ad.mbs.getMusicVolume()
-      self.ref.volume_down()
+      self.ref_primary.volume_down()
       bluetooth_utils.assert_wait_condition_true(
           lambda: self.ad.mbs.getMusicVolume() < initial_volume,
           fail_message='Failed to decrease media volume.',
@@ -125,7 +137,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
       with self.ad.services.logcat_pubsub.event(
           pattern=_LE_AUDIO_IDLE_PATTERN, tag=_BT_LOGCAT_TAG, level='I'
       ) as ase_state_event:
-        self.ref.media_pause()
+        self.ref_primary.media_pause()
         asserts.assert_true(
             ase_state_event.wait(timeout=_MEDIA_PLAY_DURATION),
             'Failed to pause media stream.',
@@ -134,7 +146,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
       with self.ad.services.logcat_pubsub.event(
           pattern=_LE_AUDIO_STREAMING_PATTERN, tag=_BT_LOGCAT_TAG, level='I'
       ) as ase_state_event:
-        self.ref.media_play()
+        self.ref_primary.media_play()
         asserts.assert_true(
             ase_state_event.wait(timeout=_MEDIA_PLAY_DURATION),
             'Failed to resume media stream.',
@@ -144,21 +156,25 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
       # Media fast forward/backward
       #################################################################
       # No assertions. Need to manually check the video and audio.
-      self.ref.media_next()
+      self.ref_primary.media_next()
       time.sleep(_MEDIA_PLAY_DURATION.total_seconds())
 
-      self.ref.media_prev()
+      self.ref_primary.media_prev()
       time.sleep(_MEDIA_PLAY_DURATION.total_seconds())
 
     self.ad.log.info('Finished media streaming.')
 
-  def teardown_test(self):
+  def teardown_test(self) -> None:
     self.ad.services.create_output_excerpts_all(self.current_test_info)
-    self.ref.create_output_excerpts(self.current_test_info)
-
-  def teardown_class(self):
+    utils.concurrent_exec(
+        lambda d: d.create_output_excerpts(self.current_test_info),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
+    )
+  
+  def teardown_class(self) -> None:
     bluetooth_utils.clear_bonded_devices(self.ad)
-    # self.recorder.stop()
+
 
 if __name__ == '__main__':
   test_runner.main()

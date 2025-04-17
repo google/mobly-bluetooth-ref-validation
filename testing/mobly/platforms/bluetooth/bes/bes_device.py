@@ -81,6 +81,7 @@ _FIRMWARE_BUILD_DATE_PATTERN = re.compile(r'.*BUILD_DATE=(?P<build_date>.*)')
 _FIRMWARE_VERSION_PATTERN = re.compile(r'.*REV_INFO=(?P<version>.*)')
 _DEVICE_INFO_PATTERN = re.compile(r'(?P<key>.*): (?P<value>.*)')
 _GET_VOLUME_PATTERN = re.compile(r'.*volume=(?P<level>\d+).*')
+_GET_BLE_VOLUME_PATTERN = re.compile(r'.*BLE volume=(?P<level>\d+).*')
 _GET_BATTERY_LEVEL_PATTERN = re.compile(r'.*battery_level: (?P<level>\d+).*')
 _SEPARATER = '\r\n' if sys.platform == 'win32' else '\n'
 _PAIRED_DEVICE_INFO_PATTERN = re.compile(
@@ -674,7 +675,7 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
     return True
 
   def enable_anc(self) -> None:
-    raise NotImplementedError('Method `enable_anc` not implemented yet.')
+    return
 
   def disable_anc(self) -> None:
     raise NotImplementedError('Method `disable_anc` not implemented yet.')
@@ -952,6 +953,23 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
       return int(matched['level'])
     raise BesRuntimeError(
         f'Failed to get volume level from command result: {result}'
+    )
+
+  def get_ble_volume(self) -> int:
+    """Gets the BLE volume of the device.
+
+    Returns:
+      The volume level of the device.
+
+    Raises:
+      BesRuntimeError: If failed to get valid volume level from the BES
+        response.
+    """
+    result = self._send_bes_command(constants.BESCommand.GET_VOLUME)
+    if matched := _GET_BLE_VOLUME_PATTERN.search(result):
+      return int(matched['level'])
+    raise BesRuntimeError(
+        f'Failed to get BLE volume level from command result: {result}'
     )
 
   def call_accept(self) -> None:

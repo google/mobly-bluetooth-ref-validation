@@ -43,7 +43,9 @@ class FastPairInitialPairTwoDevicesTest(bt_base_test.BtRefBaseTest):
     self.ad_a, self.ad_b, *_ = self.register_controller(android_device, 2)
     utils.concurrent_exec(
         bluetooth_utils.setup_android_device,
-        param_list=[[self.ad_a, True], [self.ad_b, True]],
+        param_list=[
+            [self.ad_a, True, True, True, True], [self.ad_b, True, True, True, True]
+        ],
         raise_on_exception=True,
     )
 
@@ -52,6 +54,8 @@ class FastPairInitialPairTwoDevicesTest(bt_base_test.BtRefBaseTest):
 
   def setup_test(self) -> None:
     self.ref.factory_reset()
+    self.ref.set_component_number(1)
+    self.ref.start_pairing_mode()
 
   def test_bt_pair_multiple_devices(self) -> None:
     ref_address = self.ref.bluetooth_address.upper()

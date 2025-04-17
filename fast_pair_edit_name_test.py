@@ -56,7 +56,13 @@ class FastPairEditNameTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad, setup_fast_pair=True)
+    bluetooth_utils.setup_android_device(
+        self.ad,
+        setup_fast_pair=True,
+        record_screen=True,
+        enable_wifi=True,
+        enable_le_audio=True,
+    )
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
@@ -66,6 +72,8 @@ class FastPairEditNameTest(bt_base_test.BtRefBaseTest):
   def test_1_initial_pair_with_null_name(self):
     self.ad.adb.shell('svc bluetooth disable')
     self.ref.factory_reset()
+    self.ref.set_component_number(1)
+    self.ref.start_pairing_mode()
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ad.adb.shell('svc bluetooth enable')
 

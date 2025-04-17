@@ -26,13 +26,12 @@ from mobly.controllers import android_device
 import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
 from testing.utils import bluetooth_utils
-# from testing.utils import audio_recorder
 
 _AUDIO_FILE_PATH = 'testing/assets/test_audio_music.wav'
 
-_DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=3)
+_DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 _AUDIO_PLAY_DURATION = datetime.timedelta(seconds=15)
-_AUDIO_PLAY_INTERVAL = datetime.timedelta(seconds=10)
+_AUDIO_PLAY_INTERVAL = datetime.timedelta(seconds=15)
 
 # Regex for detection of LE Audio streaming success logcat line
 _LE_AUDIO_STREAMING_PATTERN = r'.*ASE state: Streaming \(0x4\).*'
@@ -43,44 +42,42 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
   """Test class for LE Audio test on Android + Bluetooth reference device."""
 
   ad: android_device.AndroidDevice
-  ref: bluetooth_reference_device.BluetoothReferenceDeviceBase
+  ref_primary: bluetooth_reference_device.BluetoothReferenceDeviceBase
+  ref_secondary: bluetooth_reference_device.BluetoothReferenceDeviceBase
 
-  def setup_class(self):
+  def setup_class(self) -> None:
     super().setup_class()
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(
+        self.ad, record_screen=True, enable_le_audio=True
+    )
 
-    # Register Bluetooth reference device
-    self.ref = self.register_controller(bluetooth_reference_device)[0]
-    self.ref.factory_reset()
+    # Register Bluetooth reference devices.
+    refs = self.register_controller(bluetooth_reference_device, min_number=2)
+    self.ref_primary, self.ref_secondary = bluetooth_utils.get_tws_device(refs)
 
-    # # Init audio recorder
-    # self.recorder = audio_recorder.AudioRecorder()
-
-  def test_1_pair_ref_and_enable_le_audio(self):
-    # Discover and pair the devices
-    bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
-    self.ref.set_on_head_state(True)
+    utils.concurrent_exec(
+        lambda d: d.factory_reset(),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
+    )
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref_primary.start_pairing_mode()
+
+  def setup_test(self):
+    # Discover and pair the devices
+    bluetooth_utils.mbs_pair_devices(
+        self.ad, self.ref_primary.bluetooth_address
+    )
 
     # Enable LE Audio on Android
     self.ad.log.info('Enabling LE Audio...')
     bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, True)
     self.ad.log.info('LE Audio enabled.')
-    self.lea_enabled = True
 
-  def test_2_audio_streaming(self):
-    asserts.skip_if(
-        not hasattr(self, 'lea_enabled'),
-        'LEA not enabled. Skip following steps.',
-    )
-    # Record the music play
-    # logging.info('Start recording.')
-    # utils.create_dir(self.current_test_info.output_path)
-    # self.recorder.start(output_dir=self.current_test_info.output_path)
-
+  def test_le_audio_streaming(self):
     # Start audio playing
     self.ad.log.info('Start playing audio...')
     with bluetooth_utils.push_and_play_audio_on_android(
@@ -98,13 +95,17 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
 
     self.ad.log.info('Finished audio playing.')
 
-  def teardown_test(self):
+  def teardown_test(self) -> None:
     self.ad.services.create_output_excerpts_all(self.current_test_info)
-    self.ref.create_output_excerpts(self.current_test_info)
+    utils.concurrent_exec(
+        lambda d: d.create_output_excerpts(self.current_test_info),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
+    )
 
-  def teardown_class(self):
+  def teardown_class(self) -> None:
     bluetooth_utils.clear_bonded_devices(self.ad)
-    # self.recorder.stop()
+
 
 if __name__ == '__main__':
   test_runner.main()

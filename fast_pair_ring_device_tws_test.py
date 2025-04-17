@@ -46,16 +46,17 @@ class FastPairRingDeviceTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad, setup_fast_pair=True)
+    bluetooth_utils.setup_android_device(
+        self.ad,
+        setup_fast_pair=True,
+        record_screen=True,
+        enable_wifi=True,
+        enable_le_audio=True,
+    )
 
-    # Register Bluetooth reference device
+    # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
-    if refs[0].config.get('role', '') == 'primary':
-      self.ref_primary = refs[0]
-      self.ref_secondary = refs[1]
-    else:
-      self.ref_primary = refs[1]
-      self.ref_secondary = refs[0]
+    self.ref_primary, self.ref_secondary = bluetooth_utils.get_tws_device(refs)
     
   def setup_test(self):
     self.ad.adb.shell('svc bluetooth disable')
@@ -64,7 +65,19 @@ class FastPairRingDeviceTest(bt_base_test.BtRefBaseTest):
         [[self.ref_primary], [self.ref_secondary]],
         raise_on_exception=True,
     )
+    utils.concurrent_exec(
+        lambda d: d.enable_tws(),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
+    )
+    utils.concurrent_exec(
+        lambda d: d.pair_tws(),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
+    )
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref_primary.set_component_number(2)
+    self.ref_primary.start_pairing_mode()
     self.ad.adb.shell('svc bluetooth enable')
 
   def test_ring_device_active_state(self):

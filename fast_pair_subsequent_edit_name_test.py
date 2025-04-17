@@ -60,7 +60,10 @@ class FastPairSubsequentEditNameTest(bt_base_test.BtRefBaseTest):
     self.initial_pair_phone, self.subsequent_pair_phone = ads
     utils.concurrent_exec(
         bluetooth_utils.setup_android_device,
-        [[self.initial_pair_phone, True], [self.subsequent_pair_phone, True]],
+        [
+            [self.initial_pair_phone, True, True, True, True],
+            [self.subsequent_pair_phone, True, True, True, True],
+        ],
         raise_on_exception=True,
     )
 
@@ -73,6 +76,8 @@ class FastPairSubsequentEditNameTest(bt_base_test.BtRefBaseTest):
   def test_1_initial_pair_with_null_name(self):
     self.initial_pair_phone.adb.shell('svc bluetooth disable')
     self.ref.factory_reset()
+    self.ref.set_component_number(1)
+    self.ref.start_pairing_mode()
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.initial_pair_phone.adb.shell('svc bluetooth enable')
 
@@ -162,24 +167,14 @@ class FastPairSubsequentEditNameTest(bt_base_test.BtRefBaseTest):
         'No device name from step 1 after initial pair',
     )
 
-    with self.initial_pair_phone.services.logcat_pubsub.event(
-          pattern=_INITIAL_NAME_PATTERN,
-          tag=_FAST_PAIR_TAG,
-          level='I',
-      ) as initial_name_event:
-      bluetooth_utils.fast_pair_subsequent_pair_android_and_ref(
-          self.subsequent_pair_phone, self.ref.bluetooth_address
-      )
+    bluetooth_utils.fast_pair_subsequent_pair_android_and_ref(
+        self.subsequent_pair_phone, self.ref.bluetooth_address
+    )
+    with bluetooth_utils.open_system_settings(self.subsequent_pair_phone):
       asserts.assert_true(
-          initial_name_event.wait(timeout=_FAST_PAIR_PAIR_TIME),
-          'The subsequent paired device has no initial name.'
-      )
-      matched = re.match(
-          _INITIAL_NAME_PATTERN, initial_name_event.trigger.message
-      )
-      asserts.assert_equal(
-          matched['name'],
-          self.new_device_name,
+          self.subsequent_pair_phone.uia(
+              textContains=self.new_device_name
+          ).wait.exists(_WAIT_FOR_UI_UPDATE),
           'Personalized name not set on the subsequent pair device.'
       )
 

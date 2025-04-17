@@ -101,19 +101,73 @@ def clear_bonded_devices(ad: android_device.AndroidDevice) -> None:
     time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
 
 
-def enable_bluetooth_le_audio(ad: android_device.AndroidDevice) -> None:
+def set_bluetooth_le_audio(
+    ad: android_device.AndroidDevice, target_state: bool
+) -> None:
   """Enables Bluetooth LE Audio."""
-  if ad.adb.getprop(
+  if not ad.is_adb_root:
+    return
+  current_state = ad.adb.getprop(
       'persist.bluetooth.leaudio.bypass_allow_list'
-  ) != 'true':
+  ) == 'true'
+  if current_state == target_state:
+    return
+  if target_state:
     ad.adb.shell('setprop persist.bluetooth.leaudio.bypass_allow_list true')
-    ad.reboot()
+  else:
+    ad.adb.shell('setprop persist.bluetooth.leaudio.bypass_allow_list false')
+  ad.reboot()
+
+
+def is_wifi_enabled(ad: android_device.AndroidDevice) -> bool:
+  """Returns True if Wi-Fi is enabled, False otherwise."""
+  return ad.adb.shell(['cmd', 'wifi', 'status']).startswith(b'Wifi is enabled')
+
+
+def wifi_enable(ad: android_device.AndroidDevice) -> None:
+  """Enables Wi-Fi."""
+  if is_wifi_enabled(ad):
+    ad.log.info('Wi-Fi was already enabled.')
+    return
+  ad.log.info('Enabling Wi-Fi...')
+  ad.adb.shell(['cmd', 'wifi', 'set-wifi-enabled', 'enabled'])
+  assert_wait_condition_true(
+      lambda: is_wifi_enabled(ad),
+      timeout=_DELAY_AFTER_CHANGE_WIFI_STATUS,
+      fail_message='Fail to enable Wi-Fi',
+      assert_if_failed=False,
+  )
+
+
+def wifi_disable(ad: android_device.AndroidDevice) -> None:
+  """Enables Wi-Fi."""
+  if not is_wifi_enabled(ad):
+    ad.log.info('Wi-Fi was already disabled.')
+    return
+  ad.log.info('Disabling Wi-Fi...')
+  ad.adb.shell(['cmd', 'wifi', 'set-wifi-enabled', 'disabled'])
+  assert_wait_condition_true(
+      lambda: not is_wifi_enabled(ad),
+      timeout=_DELAY_AFTER_CHANGE_WIFI_STATUS,
+      fail_message='Fail to disable Wi-Fi',
+      assert_if_failed=False,
+  )
+
+
+def is_wifi_data_connected(ad: android_device.AndroidDevice) -> bool:
+  """Returns True if WiFi data is connected, False otherwise."""
+  try:
+    return b'5 received' in ad.adb.shell(['ping', '-c', '5', '8.8.8.8'])
+  except adb.AdbError:
+    return False
 
 
 def setup_android_device(
     ad: android_device.AndroidDevice,
     setup_fast_pair: bool = False,
     enable_le_audio: bool = True,
+    enable_wifi: bool = False,
+    record_screen: bool = False,
 ) -> None:
   """Sets up the Android device for Fast Pair."""
   # Load Mobly Bundled Snippets on the Android device. Mobly Bundled Snippets
@@ -125,14 +179,27 @@ def setup_android_device(
   )
 
   # Prepare for LE Audio
-  if enable_le_audio and ad.is_adb_root:
-    enable_bluetooth_le_audio(ad)
+  if enable_le_audio:
+    set_bluetooth_le_audio(ad, True)
+  else:
+    set_bluetooth_le_audio(ad, False)
 
   android_utils.load_mbs_and_uiautomator(ad, uiautomator_snippet_name='uia')
 
   # Enable Bluetooth
   if not ad.mbs.btIsEnabled():
     ad.mbs.btEnable()
+
+  if enable_wifi:
+    wifi_enable(ad)
+    assert_wait_condition_true(
+        lambda: is_wifi_data_connected(ad),
+        timeout=_DELAY_AFTER_CHANGE_WIFI_STATUS,
+        fail_message='Failed to connect to WiFi data',
+        assert_if_failed=False,
+    )
+  else:
+    wifi_disable(ad)
 
   # Enable HCI log
   android_utils.enable_bluetooth_hci_log(ad)
@@ -147,6 +214,14 @@ def setup_android_device(
   ad.services.register(
       'logcat_pubsub', logcat_pubsub_service.LogcatPublisherService
   )
+
+  # Start screen recorder service
+  if record_screen:
+    ad.services.register(
+        'screen_recorder',
+        screen_recorder.ScreenRecorder,
+        screen_recorder.Configs(video_bit_rate=_VIDEO_BIT_RATE),
+    )
 
 
 def get_tws_device(refs: list[BtRefDevice]) -> tuple[BtRefDevice, BtRefDevice]:
@@ -357,8 +432,30 @@ def assert_device_name_update(
   )
 
 
+def wait_fp_connected_and_close_halfsheet(
+    ad: android_device.AndroidDevice,
+    fail_message: str = _FP_INITIAL_PAIR_FAIL_MSG,
+) -> None:
+  assert_wait_condition_true(
+      lambda: not ad.uia(textContains='Connecting').exists,
+      timeout=_WAIT_FOR_FP_HALFSHEET,
+      fail_message='Failed to wait for Fast Pair initial pair complete.',
+  )
+  if ad.uia(text='Skip').wait.exists(_WAIT_FOR_UI_TRANSLATE):
+    ad.uia(text='Skip').click()
+  if ad.uia(text='No thanks').exists:
+    ad.uia(text='No thanks').click()
+  if ad.uia(text='Done').exists:
+    ad.uia(text='Done').click()
+  if ad.uia(text="Couldn't connect").wait.exists(_WAIT_FOR_UI_TRANSLATE):
+    asserts.fail(fail_message)
+  ad.uia.press.back()
+
+
 def fast_pair_android_and_ref(
-    ad: android_device.AndroidDevice, address: str
+    ad: android_device.AndroidDevice,
+    address: str,
+    fail_message: str = 'Fail to press connect button on displayed halfsheet.',
 ) -> None:
   """Fast Pair connect Android and the reference device.
 
@@ -369,16 +466,10 @@ def fast_pair_android_and_ref(
   # Click 'Connect' button in the Fast Pair half sheet.
   asserts.assert_true(
       ad.uia(text='Connect').wait.click(_WAIT_FOR_UI_UPDATE),
-      'Fail to press connect button on displayed halfsheet.',
+      fail_message,
   )
 
-  # Expect 'Device connected' message and then click 'Done' button.
-  asserts.assert_true(
-      ad.uia(text='Device connected').wait.exists(_WAIT_FOR_UI_UPDATE),
-      'Fail to show "Device connected" keyword on the halfsheet after'
-      ' pairing.',
-  )
-  ad.uia(text='Done').click()
+  wait_fp_connected_and_close_halfsheet(ad)
 
   # Confirm the devices are connected.
   assert_device_bonded_via_address(ad, address)

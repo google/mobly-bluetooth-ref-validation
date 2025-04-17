@@ -52,12 +52,17 @@ class FastPairSubsequentPairTest(bt_base_test.BtRefBaseTest):
     self.initial_pair_phone, self.subsequent_pair_phone = ads
     utils.concurrent_exec(
         bluetooth_utils.setup_android_device,
-        [[self.initial_pair_phone, True], [self.subsequent_pair_phone, True]],
+        [
+            [self.initial_pair_phone, True, True, True, True],
+            [self.subsequent_pair_phone, True, True, True, True],
+        ],
         raise_on_exception=True,
     )
 
   def setup_test(self):
     self.ref.factory_reset()
+    self.ref.set_component_number(1)
+    self.ref.start_pairing_mode()
 
   def test_fast_pair_subsequent_pairing(self):
     #################################################################
@@ -73,14 +78,11 @@ class FastPairSubsequentPairTest(bt_base_test.BtRefBaseTest):
     )
 
     # Expect 'Device connected' message and then click 'Done' button.
-    asserts.assert_true(
-        self.initial_pair_phone.uia(text='Device connected').wait.exists(
-            _WAIT_FOR_UI_UPDATE
-        ),
+    bluetooth_utils.wait_fp_connected_and_close_halfsheet(
+        self.initial_pair_phone,
         f'[First AndroidDevice|{self.initial_pair_phone.serial}] Fail to pair'
         ' with Fast Pair provider.',
     )
-    self.initial_pair_phone.uia(text='Done').click()
 
     # Confirm the first phone and reference device are connected.
     bluetooth_utils.assert_device_bonded_via_address(
@@ -108,7 +110,7 @@ class FastPairSubsequentPairTest(bt_base_test.BtRefBaseTest):
     )
 
     # Confirm the second phone and reference device are connected.
-    bluetooth_utils.assert_device_bonded_via_address(
+    bluetooth_utils.assert_device_bonded_via_identity_address(
         self.subsequent_pair_phone,
         self.ref.bluetooth_address,
         timeout=_SUBSEQUENT_PAIR_CONNECTION_TIME,
