@@ -50,16 +50,11 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad, record_screen=True)
 
-    # Register Bluetooth reference device
+    # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
-    if refs[0].config.get('role', '') == 'primary':
-      self.ref_primary = refs[0]
-      self.ref_secondary = refs[1]
-    else:
-      self.ref_primary = refs[1]
-      self.ref_secondary = refs[0]
+    self.ref_primary, self.ref_secondary = bluetooth_utils.get_tws_device(refs)
     utils.concurrent_exec(
         lambda d: d.factory_reset(),
         [[self.ref_primary], [self.ref_secondary]],
@@ -85,14 +80,18 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
     self.ref_primary.get_battery_level()
     self.ref_secondary.get_battery_level()
 
+    self.ref_primary.start_pairing_mode()
     # Pair the Android phone with ref.
     initial_name = bluetooth_utils.assert_device_discovered(
       self.ad, self.ref_primary.bluetooth_address
     )
-    self.ad.mbs.btPairDevice(self.ref_primary.bluetooth_address.upper())
+    bluetooth_utils.mbs_pair_with_retry(
+        self.ad, self.ref_primary.bluetooth_address
+    )
     bluetooth_utils.assert_device_bonded_via_address(
       self.ad, self.ref_primary.bluetooth_address
     )
+    self.paired = True
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
     with bluetooth_utils.open_system_settings(self.ad):
@@ -111,9 +110,19 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
       )
 
   def test_3_check_paired_device_detail(self):
+    asserts.skip_if(
+        not hasattr(self, 'paired'),
+        'Devices not paired. Skip following steps.',
+    )
     with bluetooth_utils.open_device_detail_settings(self.ad):
       # Check only one address in device detail
       self.ad.uia(scrollable=True).scroll.down(textContains='Bluetooth address')
+      asserts.assert_true(
+          self.ad.uia(textContains='Bluetooth address').wait.exists(
+              _DELAYS_BETWEEN_ACTIONS
+          ),
+          'Failed to find Bluetooth address on the device detail page.'
+      )
       bluetooth_address_text = self.ad.uia(textContains='Bluetooth address').text
       bluetooth_address_list = bluetooth_address_text.replace(
           "Device's Bluetooth address:", ''
@@ -165,6 +174,9 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
         [[self.ref_primary], [self.ref_secondary]],
         raise_on_exception=True,
     )
+
+  def teardown_class(self) -> None:
+    bluetooth_utils.clear_bonded_devices(self.ad)
 
 
 if __name__ == '__main__':

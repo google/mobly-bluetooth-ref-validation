@@ -498,10 +498,10 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
     time.sleep(_RESET_WAIT_TIME.total_seconds())
 
   def power_on(self) -> None:
-    raise NotImplementedError('Not implemented yet.')
+    self.open_box()
 
   def power_off(self) -> None:
-    raise NotImplementedError('Not implemented yet.')
+    self.close_box()
 
   def get_serial_number(self) -> str:
     return self._send_bes_command(constants.BESCommand.GET_SERIAL_NUMBER)

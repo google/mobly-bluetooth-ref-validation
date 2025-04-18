@@ -44,11 +44,12 @@ class SpatialAudioEnableTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad, record_screen=True)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
     self.ref.factory_reset()
+    self.ref.set_component_number(1)
 
   def _assert_set_spatial_audio_state(self, target_state: bool) -> None:
     with bluetooth_utils.open_device_detail_settings(self.ad):
@@ -81,15 +82,15 @@ class SpatialAudioEnableTest(bt_base_test.BtRefBaseTest):
           ),
       )
 
-
   def test_enable_spatial_audio(self) -> None:
     self.ref.enable_spatial_audio()
+    self.ref.start_pairing_mode()
 
     # Pair the Android phone with ref.
     bluetooth_utils.assert_device_discovered(
       self.ad, self.ref.bluetooth_address
     )
-    self.ad.mbs.btPairDevice(self.ref.bluetooth_address.upper())
+    bluetooth_utils.mbs_pair_with_retry(self.ad, self.ref.bluetooth_address)
     bluetooth_utils.assert_device_bonded_via_address(
       self.ad, self.ref.bluetooth_address
     )
@@ -100,10 +101,10 @@ class SpatialAudioEnableTest(bt_base_test.BtRefBaseTest):
     self._assert_set_spatial_audio_state(target_state=False)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
-
   def teardown_test(self) -> None:
     self.ad.services.create_output_excerpts_all(self.current_test_info)
     self.ref.create_output_excerpts(self.current_test_info)
+    bluetooth_utils.clear_bonded_devices(self.ad)
 
 
 if __name__ == '__main__':

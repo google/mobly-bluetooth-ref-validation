@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test Bluetooth disable spatial audio feature of reference device."""
+"""A Mobly Test to test power on and off function of Bluetooth reference device."""
 
 import datetime
+import logging
 import time
-import uuid
 
-from mobly import asserts
+from mobly import base_test
 from mobly import test_runner
+from mobly import utils
 from mobly.controllers import android_device
 
 import bt_base_test
@@ -27,14 +28,10 @@ from testing.mobly.platforms.bluetooth import bluetooth_reference_device
 from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
-_WAIT_FOR_UI_TRANSLATE = datetime.timedelta(seconds=6)
-_WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
-
-_SPATIAL_AUDIO_TITLE = 'Spatial Audio'
 
 
-class SpatialAudioDisableTest(bt_base_test.BtRefBaseTest):
-  """A Mobly Test to test spatial audio disable feature of reference device."""
+class PowerOnOffTest(bt_base_test.BtRefBaseTest):
+  """A Mobly Test to test power on and off function of Bluetooth reference device."""
 
   ad: android_device.AndroidDevice
   ref: bluetooth_reference_device.BluetoothReferenceDeviceBase
@@ -44,46 +41,46 @@ class SpatialAudioDisableTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad, record_screen=True)
+    bluetooth_utils.setup_android_device(self.ad)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
+
+  def setup_test(self) -> None:
     self.ref.factory_reset()
     self.ref.set_component_number(1)
-
-  def test_disable_spatial_audio(self) -> None:
-    self.ref.disable_spatial_audio()
     self.ref.start_pairing_mode()
 
-    # Pair the Android phone with ref.
-    bluetooth_utils.assert_device_discovered(
-      self.ad, self.ref.bluetooth_address
-    )
-    self.ad.mbs.btPairDevice(self.ref.bluetooth_address.upper())
-    bluetooth_utils.assert_device_bonded_via_address(
-      self.ad, self.ref.bluetooth_address
+  def test_bt_power_off_then_on_reconnect(self) -> None:
+    ref_address = self.ref.bluetooth_address.upper()
+
+    bluetooth_utils.mbs_pair_devices(self.ad, ref_address)
+    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, False)
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+
+    self.ref.power_off()
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+
+    bluetooth_utils.assert_device_disconnected(
+        self.ad,
+        ref_address,
+        fail_message='Fail to power off. Board is still connected with Android after 30s',
     )
 
-    # Enable Spatial Audio buttton state
-    with bluetooth_utils.open_device_detail_settings(self.ad):
-      self.ad.uia(scrollable=True).scroll.down(text=_SPATIAL_AUDIO_TITLE)
+    self.ref.power_on()
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
-      if self.ad.uia(text=_SPATIAL_AUDIO_TITLE).wait.exists(
-          _WAIT_FOR_UI_TRANSLATE
-      ):
-        spatial_audio_switch = self.ad.uia(text=_SPATIAL_AUDIO_TITLE).right(
-            clazz='android.widget.Switch'
-        )
-        if spatial_audio_switch.checked and spatial_audio_switch.enabled:
-          asserts.fail(
-              'Failed to disable spatial Spatial Audio. '
-              'Spatial Audio button not shown and active in Device Detail.'
-          )
+    bluetooth_utils.assert_device_connected(
+        self.ad,
+        ref_address,
+        fail_message='Fail to power on. Board is not re-connected with Android after 30s',
+    )
 
   def teardown_test(self) -> None:
     self.ad.services.create_output_excerpts_all(self.current_test_info)
     self.ref.create_output_excerpts(self.current_test_info)
     bluetooth_utils.clear_bonded_devices(self.ad)
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
 
 if __name__ == '__main__':

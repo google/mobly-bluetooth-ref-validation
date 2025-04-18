@@ -81,7 +81,7 @@ class FastPairPowerOnOffTest(bt_base_test.BtRefBaseTest):
     ads = self.register_controller(android_device, 2)
     self.ad_a, self.ad_b = ads
     utils.concurrent_exec(
-        fast_pair_utils.setup_android_device,
+        bluetooth_utils.setup_android_device,
         [
             [self.ad_a, True, True, True, True],
             [self.ad_b, True, True, True, True],
@@ -104,7 +104,7 @@ class FastPairPowerOnOffTest(bt_base_test.BtRefBaseTest):
         tag=_FAST_PAIR_TAG,
         level='I',
     ) as bloom_filter_change_event:
-      fast_pair_utils.fast_pair_android_and_ref(
+      bluetooth_utils.fast_pair_android_and_ref(
           self.ad_a, self.ref.bluetooth_address
       )
       asserts.assert_true(
@@ -145,7 +145,7 @@ class FastPairPowerOnOffTest(bt_base_test.BtRefBaseTest):
       self.ref.close_box()
       time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
-      fast_pair_utils.assert_device_disconnected(
+      bluetooth_utils.assert_device_disconnected(
           self.ad_a,
           self.ref.bluetooth_address,
           fail_message='Fail to power off. Board is still connected with Android after 30s',
@@ -169,7 +169,7 @@ class FastPairPowerOnOffTest(bt_base_test.BtRefBaseTest):
       self.ref.open_box()
       time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
-      fast_pair_utils.assert_device_connected(
+      bluetooth_utils.assert_device_connected(
           self.ad_a,
           self.ref.bluetooth_address,
           fail_message='Fail to power on. Board is not re-connected with Android after 30s',
@@ -182,7 +182,7 @@ class FastPairPowerOnOffTest(bt_base_test.BtRefBaseTest):
   def teardown_test(self):
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     utils.concurrent_exec(
-        fast_pair_utils.clear_bonded_devices,
+        bluetooth_utils.clear_bonded_devices,
         [[self.ad_a], [self.ad_b]],
         raise_on_exception=True,
     )

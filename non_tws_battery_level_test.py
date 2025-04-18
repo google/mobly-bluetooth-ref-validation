@@ -54,6 +54,7 @@ class NonTwsTest(bt_base_test.BtRefBaseTest):
 
   def test_2_set_battery_level_and_pair(self) -> None:
     self.ref.set_battery_level(_BATTERY_LEVEL)
+    self.ref.start_pairing_mode()
 
     #################################################################
     # Check the battery level on reference side
@@ -70,11 +71,10 @@ class NonTwsTest(bt_base_test.BtRefBaseTest):
     initial_name = bluetooth_utils.assert_device_discovered(
         self.ad, self.ref.bluetooth_address
     )
-    self.ad.mbs.btPairDevice(self.ref.bluetooth_address.upper())
+    bluetooth_utils.mbs_pair_with_retry(self.ad, self.ref.bluetooth_address)
     bluetooth_utils.assert_device_bonded_via_address(
         self.ad, self.ref.bluetooth_address
     )
-    self.ref.set_on_head_state(True)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
     # Open system settings
@@ -94,6 +94,12 @@ class NonTwsTest(bt_base_test.BtRefBaseTest):
 
       # Check only one address in device detail
       self.ad.uia(scrollable=True).scroll.down(textContains='Bluetooth address')
+      asserts.assert_true(
+          self.ad.uia(textContains='Bluetooth address').wait.exists(
+              _DELAYS_BETWEEN_ACTIONS
+          ),
+          'Failed to find Bluetooth address on the device detail page.'
+      )
       bluetooth_address_text = self.ad.uia(textContains='Bluetooth address').text
       bluetooth_address_list = bluetooth_address_text.replace(
           "Device's Bluetooth address:", ''
@@ -101,13 +107,16 @@ class NonTwsTest(bt_base_test.BtRefBaseTest):
       asserts.assert_equal(
           len(bluetooth_address_list),
           1,
-          'Fail to find correct primary ear address from device detail page.'
+          'Fail to find correct board address on the device detail page.'
       )
 
   def teardown_test(self) -> None:
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ad.services.create_output_excerpts_all(self.current_test_info)
     self.ref.create_output_excerpts(self.current_test_info)
+
+  def teardown_class(self) -> None:
+    bluetooth_utils.clear_bonded_devices(self.ad)
 
 
 if __name__ == '__main__':

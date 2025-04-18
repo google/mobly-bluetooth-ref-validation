@@ -51,12 +51,12 @@ class SetNameAddressTest(bt_base_test.BtRefBaseTest):
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
     self.ref.factory_reset()
+    self.ref.set_component_number(1)
 
   def test_ref_set_name_and_address(self) -> None:
-    random_num = random.randint(0, 20000)
-    bluetooth_name = _TARGET_BT_NAME.format(random_num=random_num)
-    ble_name = _TARGET_BLE_NAME.format(random_num=random_num)
-
+    timestamp = mobly_logger.get_log_file_timestamp()
+    bluetooth_name = _TARGET_BT_NAME.format(timestamp=timestamp)
+    ble_name = _TARGET_BLE_NAME.format(timestamp=timestamp)
     self.ad.adb.shell('svc bluetooth disable')
     try:
       self.ref.set_name(
@@ -65,6 +65,7 @@ class SetNameAddressTest(bt_base_test.BtRefBaseTest):
       )
       time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
       self.ref.set_address(_TARGET_ADDRESS)
+      self.ref.start_pairing_mode()
     finally:
       self.ad.adb.shell('svc bluetooth enable')
 
@@ -82,28 +83,24 @@ class SetNameAddressTest(bt_base_test.BtRefBaseTest):
     # Check the BT ref name and address from phone side
     #################################################################
 
-    bluetooth_utils.assert_device_discovered(
-        self.ad,
-        _TARGET_ADDRESS,
-        fail_message='Bluetooth refernece device address not discovered',
-    )
-
-    def bt_name_discovered():
-      name_list = [
-          device['Name'] for device in self.ad.mbs.btDiscoverAndGetResults()
-      ]
-      logging.info('Discovered: %s', name_list)
-      return bluetooth_name in name_list or ble_name in name_list
+    def bt_name_and_address_discovered():
+      for device in self.ad.mbs.btDiscoverAndGetResults():
+        if device['Address'] == _TARGET_ADDRESS:
+          name = device['Name']
+          if name == bluetooth_name or name == ble_name[:12]:
+            return True
+      return False
 
     bluetooth_utils.assert_wait_condition_true(
-        bt_name_discovered,
-        fail_message=f'Failed to discover target BT name {bluetooth_name}.',
+        bt_name_and_address_discovered,
+        fail_message='Failed to discover target device with correct BT name and address.',
     )
 
   def teardown_test(self) -> None:
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ad.services.create_output_excerpts_all(self.current_test_info)
     self.ref.create_output_excerpts(self.current_test_info)
+    bluetooth_utils.clear_bonded_devices(self.ad)
 
 
 if __name__ == '__main__':

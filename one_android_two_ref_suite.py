@@ -16,14 +16,34 @@
 
 from mobly import suite_runner
 
+import a2dp_avrcp_tws_test
+import a2dp_tws_test
+import bt_pair_tws_test
+import fast_pair_anc_tws_test
+import fast_pair_initial_pair_tws_test
+import fast_pair_reconnection_tws_test
 import fast_pair_ring_device_test
+import lea_audio_streaming_tws_test
+import lea_connection_tws_test
+import lea_media_control_tws_test
+import power_on_off_tws_test
 import tws_one_component_battery_level_test
 import tws_two_components_battery_level_test
 
 
 if __name__ == '__main__':
   suite_runner.run_suite([
+      bt_pair_tws_test.BtPairTwsTest,
+      a2dp_tws_test.MediaPlayTest,
+      a2dp_avrcp_tws_test.MediaControlTest,
       tws_one_component_battery_level_test.TwsOneComponentTest,
       tws_two_components_battery_level_test.TwsTwoComponentsTest,
+      power_on_off_tws_test.PowerOnOffTwsTest,
+      lea_connection_tws_test.LEAConnectionTest,
+      lea_audio_streaming_tws_test.LEAudioTest,
+      lea_media_control_tws_test.LEAudioControlTest,
+      fast_pair_initial_pair_tws_test.FastPairInitialPairTwsTest,
+      fast_pair_anc_tws_test.FastPairAncTwsTest,
       fast_pair_ring_device_test.FastPairRingDeviceTest,
+      fast_pair_reconnection_tws_test.FastPairReconnectionTwsTest,
   ])
