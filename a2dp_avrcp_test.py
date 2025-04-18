@@ -62,7 +62,7 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
     self.ad.mbs.btA2dpConnect(self.ref.bluetooth_address.upper())
 
   def test_media_play_and_control(self):
-    board_address = self.ref.bluetooth_address.upper()
+    ref_address = self.ref.bluetooth_address.upper()
 
     # Open Youtube and start playing video.
     # We can't use Mobly snippet to play audio here because the audio played by
@@ -72,7 +72,7 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
     ):
 
       bluetooth_utils.assert_wait_condition_true(
-          lambda: self.ad.mbs.btIsA2dpPlaying(board_address),
+          lambda: self.ad.mbs.btIsA2dpPlaying(ref_address),
           fail_message='Failed to start playing media.',
       )
 
@@ -106,14 +106,14 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
       #################################################################
       self.ref.media_pause()
       bluetooth_utils.assert_wait_condition_true(
-          lambda: not self.ad.mbs.btIsA2dpPlaying(board_address),
+          lambda: not self.ad.mbs.btIsA2dpPlaying(ref_address),
           fail_message='Failed to pause media.',
       )
       time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
       self.ref.media_play()
       bluetooth_utils.assert_wait_condition_true(
-          lambda: self.ad.mbs.btIsA2dpPlaying(board_address),
+          lambda: self.ad.mbs.btIsA2dpPlaying(ref_address),
           fail_message='Failed to resume media.',
       )
       time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())

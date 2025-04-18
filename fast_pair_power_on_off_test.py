@@ -83,8 +83,8 @@ class FastPairPowerOnOffTest(bt_base_test.BtRefBaseTest):
     utils.concurrent_exec(
         bluetooth_utils.setup_android_device,
         [
-            [self.ad_a, True, True, True, True],
-            [self.ad_b, True, True, True, True],
+            [self.ad_a, True, True, True],
+            [self.ad_b, True, True, True],
         ],
         raise_on_exception=True,
     )

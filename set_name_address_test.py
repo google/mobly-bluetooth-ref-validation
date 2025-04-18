@@ -30,8 +30,8 @@ from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 
-_TARGET_BT_NAME = 'bt {random_num}'
-_TARGET_BLE_NAME = 'ble {random_num}'
+_TARGET_BT_NAME = 'bt {timestamp}'
+_TARGET_BLE_NAME = 'ble {timestamp}'
 _TARGET_ADDRESS = '11:22:23:33:33:61'
 
 

@@ -25,6 +25,7 @@ from typing import TypeAlias
 from mobly import asserts
 from mobly.controllers import android_device
 from mobly.controllers.android_device_lib import adb
+from mobly.snippet import errors as snippet_errors
 
 from testing.utils import android_utils
 from testing.mobly.platforms.android.services import logcat_pubsub_service
@@ -44,11 +45,13 @@ _STOP_SETTINGS_CMD = 'am force-stop com.android.settings'
 _YOUTUBE_PKG = 'com.google.android.youtube'
 
 # Constants for the widget resource ID
-_FAST_PAIR_HALFSHEET_IMAGE_ID = 'com.google.android.gms:id/image_view'
+_FAST_PAIR_HALFSHEET_IMAGE_ID = 'com.google.android.gms:id/card'
 
 # Constants for operation time
 _DELAY_TIME_FOR_OPERATION = datetime.timedelta(seconds=3)
+_DELAY_AFTER_CHANGE_WIFI_STATUS = datetime.timedelta(seconds=5)
 _WAIT_FOR_UI_TRANSLATE = datetime.timedelta(seconds=6)
+_WAIT_FOR_FP_HALFSHEET = datetime.timedelta(seconds=30)
 _BLUETOOTH_OPERATION_TIME = datetime.timedelta(seconds=30)
 _WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
 _INITIAL_PAIR_DISCOVER_TIME = datetime.timedelta(seconds=30)
@@ -63,6 +66,7 @@ _BT_DISCONNECTED_FAILED_MSG = 'Failed to confirm Bluetooth is disconnected.'
 _BT_UPDATE_NAME_FAILED_MSG = (
     'Failed to update the name of the connected device.'
 )
+_FP_INITIAL_PAIR_FAIL_MSG = "Device couldn't connect. Fast Pair failed."
 
 
 def clear_android_fast_pair_cache(ad: android_device.AndroidDevice) -> None:
@@ -167,7 +171,6 @@ def setup_android_device(
     setup_fast_pair: bool = False,
     enable_le_audio: bool = True,
     enable_wifi: bool = False,
-    record_screen: bool = False,
 ) -> None:
   """Sets up the Android device for Fast Pair."""
   # Load Mobly Bundled Snippets on the Android device. Mobly Bundled Snippets
@@ -214,14 +217,6 @@ def setup_android_device(
   ad.services.register(
       'logcat_pubsub', logcat_pubsub_service.LogcatPublisherService
   )
-
-  # Start screen recorder service
-  if record_screen:
-    ad.services.register(
-        'screen_recorder',
-        screen_recorder.ScreenRecorder,
-        screen_recorder.Configs(video_bit_rate=_VIDEO_BIT_RATE),
-    )
 
 
 def get_tws_device(refs: list[BtRefDevice]) -> tuple[BtRefDevice, BtRefDevice]:

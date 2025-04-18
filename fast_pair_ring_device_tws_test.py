@@ -49,7 +49,6 @@ class FastPairRingDeviceTest(bt_base_test.BtRefBaseTest):
     bluetooth_utils.setup_android_device(
         self.ad,
         setup_fast_pair=True,
-        record_screen=True,
         enable_wifi=True,
         enable_le_audio=True,
     )

@@ -44,7 +44,7 @@ class SpatialAudioDisableTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad, record_screen=True)
+    bluetooth_utils.setup_android_device(self.ad)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
@@ -59,7 +59,7 @@ class SpatialAudioDisableTest(bt_base_test.BtRefBaseTest):
     bluetooth_utils.assert_device_discovered(
       self.ad, self.ref.bluetooth_address
     )
-    self.ad.mbs.btPairDevice(self.ref.bluetooth_address.upper())
+    bluetooth_utils.mbs_pair_with_retry(self.ad, self.ref.bluetooth_address)
     bluetooth_utils.assert_device_bonded_via_address(
       self.ad, self.ref.bluetooth_address
     )
@@ -77,7 +77,7 @@ class SpatialAudioDisableTest(bt_base_test.BtRefBaseTest):
         if spatial_audio_switch.checked and spatial_audio_switch.enabled:
           asserts.fail(
               'Failed to disable spatial Spatial Audio. '
-              'Spatial Audio button not shown and active in Device Detail.'
+              'Spatial Audio button still shown and active in Device Detail.'
           )
 
   def teardown_test(self) -> None:

@@ -53,17 +53,17 @@ class BtPairTest(bt_base_test.BtRefBaseTest):
 
   @base_test.repeat(_REPEAT_RUN_NUMBER, max_consecutive_error=3)
   def test_bt_pair(self) -> None:
-    board_address = self.ref.bluetooth_address.upper()
+    ref_address = self.ref.bluetooth_address.upper()
 
     initial_name = bluetooth_utils.assert_device_discovered(
-        self.ad, board_address
+        self.ad, ref_address
     )
     self.ad.log.info(f'Discovered target device, name: {initial_name}')
 
     bluetooth_utils.mbs_pair_with_retry(self.ad, ref_address)
     self.ad.log.info('Devices paired.')
 
-    bluetooth_utils.assert_device_bonded_via_address(self.ad, board_address)
+    bluetooth_utils.assert_device_bonded_via_address(self.ad, ref_address)
 
   def teardown_test(self) -> None:
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())

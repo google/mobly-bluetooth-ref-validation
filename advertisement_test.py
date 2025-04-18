@@ -46,7 +46,7 @@ class AdvertisementTest(bt_base_test.BtRefBaseTest):
     self.ref.set_component_number(1)
 
   def test_ref_enable_pairing_then_disable(self) -> None:
-    board_address = self.ref.bluetooth_address.upper()
+    ref_address = self.ref.bluetooth_address.upper()
 
     #################################################################
     # Start advertisement
@@ -55,7 +55,7 @@ class AdvertisementTest(bt_base_test.BtRefBaseTest):
 
     # Confirm the reference device is discovered.
     def ref_discovered_by_phone() -> bool:
-      return board_address.upper() in [
+      return ref_address.upper() in [
           d['Address'] for d in self.ad.mbs.btDiscoverAndGetResults()
       ]
     bluetooth_utils.assert_wait_condition_true(
@@ -72,7 +72,7 @@ class AdvertisementTest(bt_base_test.BtRefBaseTest):
 
     # Confirm the reference device is discovered.
     def ref_not_discovered_by_phone() -> bool:
-      return board_address.upper() not in [
+      return ref_address.upper() not in [
           d['Address'] for d in self.ad.mbs.btDiscoverAndGetResults()
       ]
     bluetooth_utils.assert_wait_condition_true(

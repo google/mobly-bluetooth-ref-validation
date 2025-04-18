@@ -45,9 +45,7 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(
-        self.ad, record_screen=True, enable_wifi=True
-    )
+    bluetooth_utils.setup_android_device(self.ad, enable_wifi=True)
 
     # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)

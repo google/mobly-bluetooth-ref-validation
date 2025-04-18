@@ -54,7 +54,7 @@ class BtForgetPairedDeviceTest(bt_base_test.BtRefBaseTest):
 
   def test_bt_forget(self) -> None:
     android_address = self.ad.mbs.btGetAddress()
-    board_address = self.ref.bluetooth_address.upper()
+    ref_address = self.ref.bluetooth_address.upper()
 
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     paired_android_list = self.ref.get_paired_devices()
@@ -70,7 +70,7 @@ class BtForgetPairedDeviceTest(bt_base_test.BtRefBaseTest):
         self.ref.get_paired_devices(),
         msg='Paired device list not empty!'
     )
-    bluetooth_utils.assert_device_disconnected(board_address)
+    bluetooth_utils.assert_device_disconnected(self.ad, ref_address)
 
   def teardown_test(self) -> None:
     self.ad.services.create_output_excerpts_all(self.current_test_info)

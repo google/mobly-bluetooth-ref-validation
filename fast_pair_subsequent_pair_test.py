@@ -53,8 +53,8 @@ class FastPairSubsequentPairTest(bt_base_test.BtRefBaseTest):
     utils.concurrent_exec(
         bluetooth_utils.setup_android_device,
         [
-            [self.initial_pair_phone, True, True, True, True],
-            [self.subsequent_pair_phone, True, True, True, True],
+            [self.initial_pair_phone, True, True, True],
+            [self.subsequent_pair_phone, True, True, True],
         ],
         raise_on_exception=True,
     )

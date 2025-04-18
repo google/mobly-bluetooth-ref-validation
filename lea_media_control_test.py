@@ -51,7 +51,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
     bluetooth_utils.setup_android_device(
-        self.ad, record_screen=True, enable_wifi=True, enable_le_audio=True
+        self.ad, enable_wifi=True, enable_le_audio=True
     )
 
     # Register Bluetooth reference devices.

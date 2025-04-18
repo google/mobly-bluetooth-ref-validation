@@ -19,6 +19,7 @@ import logging
 import time
 
 from mobly import asserts
+from mobly import base_test
 from mobly import test_runner
 from mobly import utils
 from mobly.controllers import android_device
@@ -47,7 +48,6 @@ class FastPairInitialPairTest(bt_base_test.BtRefBaseTest):
     bluetooth_utils.setup_android_device(
         self.ad,
         setup_fast_pair=True,
-        record_screen=True,
         enable_wifi=True,
         enable_le_audio=True,
     )
