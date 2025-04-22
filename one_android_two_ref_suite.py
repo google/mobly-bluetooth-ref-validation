@@ -16,19 +16,19 @@
 
 from mobly import suite_runner
 
-import a2dp_avrcp_tws_test
-import a2dp_tws_test
-import bt_pair_tws_test
-import fast_pair_anc_tws_test
-import fast_pair_initial_pair_tws_test
-import fast_pair_reconnection_tws_test
-import fast_pair_ring_device_test
-import lea_audio_streaming_tws_test
-import lea_connection_tws_test
-import lea_media_control_tws_test
-import power_on_off_tws_test
-import tws_one_component_battery_level_test
-import tws_two_components_battery_level_test
+from testing import a2dp_avrcp_tws_test
+from testing import a2dp_tws_test
+from testing import bt_pair_tws_test
+from testing import fast_pair_anc_tws_test
+from testing import fast_pair_initial_pair_tws_test
+from testing import fast_pair_reconnection_tws_test
+from testing import fast_pair_ring_device_tws_test
+from testing import lea_audio_streaming_tws_test
+from testing import lea_connection_tws_test
+from testing import lea_media_control_tws_test
+from testing import power_on_off_tws_test
+from testing import tws_one_component_battery_level_test
+from testing import tws_two_components_battery_level_test
 
 
 if __name__ == '__main__':
@@ -44,6 +44,6 @@ if __name__ == '__main__':
       lea_media_control_tws_test.LEAudioControlTest,
       fast_pair_initial_pair_tws_test.FastPairInitialPairTwsTest,
       fast_pair_anc_tws_test.FastPairAncTwsTest,
-      fast_pair_ring_device_test.FastPairRingDeviceTest,
+      fast_pair_ring_device_tws_test.FastPairRingDeviceTest,
       fast_pair_reconnection_tws_test.FastPairReconnectionTwsTest,
   ])

@@ -16,25 +16,25 @@
 
 from mobly import suite_runner
 
-import a2dp_avrcp_test
-import a2dp_test
-import advertisement_test
-import anc_disable_test
-import anc_enable_test
-import bt_forget_test
-import bt_pair_test
-import classic_connection_test
-import fast_pair_anc_test
-import fast_pair_initial_pair_test
-import lea_audio_streaming_test
-import lea_connection_test
-import non_tws_battery_level_test
-import on_head_state_test
-import power_on_off_test
-import serial_number_test
-import set_name_address_test
-import spatial_audio_disable_test
-import spatial_audio_enable_test
+from testing import a2dp_avrcp_test
+from testing import a2dp_test
+from testing import advertisement_test
+from testing import anc_disable_test
+from testing import anc_enable_test
+from testing import bt_forget_test
+from testing import bt_pair_test
+from testing import classic_connection_test
+from testing import fast_pair_anc_test
+from testing import fast_pair_initial_pair_test
+from testing import lea_audio_streaming_test
+from testing import lea_connection_test
+from testing import non_tws_battery_level_test
+from testing import on_head_state_test
+from testing import power_on_off_test
+from testing import serial_number_test
+from testing import set_name_address_test
+from testing import spatial_audio_disable_test
+from testing import spatial_audio_enable_test
 
 
 if __name__ == '__main__':

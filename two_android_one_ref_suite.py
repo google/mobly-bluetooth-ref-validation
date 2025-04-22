@@ -16,13 +16,13 @@
 
 from mobly import suite_runner
 
-import bt_pair_multiple_devices_test
-import bt_pair_multi_point_test
-import bt_pair_single_point_test
-import fast_pair_anc_mode_sync_test
-import fast_pair_initial_pair_two_devices_test
-import fast_pair_subsequent_edit_name_test
-import fast_pair_subsequent_pair_test
+from testing import bt_pair_multiple_devices_test
+from testing import bt_pair_multi_point_test
+from testing import bt_pair_single_point_test
+from testing import fast_pair_anc_mode_sync_test
+from testing import fast_pair_initial_pair_two_devices_test
+from testing import fast_pair_subsequent_edit_name_test
+from testing import fast_pair_subsequent_pair_test
 
 
 if __name__ == '__main__':
