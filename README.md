@@ -127,7 +127,7 @@ Now you are able to run the example Mobly tests.
     test suite:
 
     ```bash
-    python3 bt_pair_test.py -c config/OneAndroidOneRefTestbed.yaml
+    python3 testing/bt_pair_test.py -c config/OneAndroidOneRefTestbed.yaml
     ```
 
 1.  Run all three Mobly test suites.
