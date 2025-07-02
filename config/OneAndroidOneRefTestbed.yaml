@@ -17,6 +17,6 @@ TestBeds:
   Controllers:
     AndroidDevice: '*'
     BluetoothReferenceDevice:
-    - controller_name: BtBoardDevice
+    - controller_name: BesDevice
       serial_port: '/dev/ttyUSB0'
-      bluetooth_address: '11:22:33:44:55:66'
+      bluetooth_address: '11:11:22:33:33:61'

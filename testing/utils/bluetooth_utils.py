@@ -121,6 +121,7 @@ def set_bluetooth_le_audio(
   else:
     ad.adb.shell('setprop persist.bluetooth.leaudio.bypass_allow_list false')
   ad.reboot()
+  time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
 
 
 def is_wifi_enabled(ad: android_device.AndroidDevice) -> bool:

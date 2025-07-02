@@ -18,6 +18,12 @@ Import your newly created Mobly controller class in
 class name in `SUPPORTED_DEVICE_CLASSES` list in this file for Mobly to
 locate and instantiate the controller class in the test. 
 
+### Example Bluetooth Reference Device
+
+We provide an example Bluetooth reference device with [BES2700ZP](https://www.bestechnic.com/Uploads/keditor/file/20241010/20241010183445_21850.pdf) chip.
+And implemented the corresponding Mobly controller
+`testing/mobly/platforms/bluetooth/bes/bes_device.py`.
+
 ## Prepare Devices
 
 ### Prepare Android Phone
@@ -50,6 +56,48 @@ locate and instantiate the controller class in the test.
 
     Take down the serial numbers of your Android devices. We'll need them in the
     following steps.
+
+### Prepare BES device
+
+If you use the BES Bluetooth dev board as the reference device, please follow
+these steps:
+
+1.  Prepare *one pair of* BES boards.
+
+1.  Connect the `USB-UART` port of the board with your PC/workstation with USB 
+    cable.
+
+1.  Press `PWR` button on the board.
+
+1.  Take down the serial port of the BES board. We'll need them in the following
+    steps.
+
+#### How to Get Serial Port of the BES Board
+
+For Linux, the serial port is something like `/dev/ttyUSB0`.
+Command to list the available ports:
+
+```bash
+ls /dev/ttyUSB*
+```
+
+For MacOS, first install the
+[PL2303 serial driver](https://apps.apple.com/cn/app/pl2303-serial/id1624835354?l=en-GB&mt=12)
+from App Store.
+
+The serial port is something like `/dev/tty.usbserial-XXXXXXXX` or
+`/dev/tty.PL2303G-USBtoUARTXXXX`. Command to list the available ports:
+
+```bash
+ls /dev/tty.*
+```
+
+For Windows, the serial port is something like `COM3`.
+Command to list the available ports:
+
+```bash
+mode
+```
 
 ##  Prepare Test suite and configs
 
@@ -97,7 +145,7 @@ locate and instantiate the controller class in the test.
           - serial: '0000000000000B'
         BluetoothReferenceDevice:
           - controller_name: BtBoardDevice
-            serial_port: '/dev/ttyUSB0'
+            serial_port: 'COM1'
             bluetooth_address: '11:22:33:44:55:66'
     MoblyParams:
       LogPath: 'C:\User\<username>\AppData\Local\Temp'
