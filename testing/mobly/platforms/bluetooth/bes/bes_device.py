@@ -36,6 +36,7 @@ from mobly import utils as mobly_utils
 
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device_base
 from testing.mobly.platforms.bluetooth.bes import bes_device_config
+from testing.mobly.platforms.bluetooth.bes import bes_hid_tool
 from testing.mobly.platforms.bluetooth.bes import bes_log_pubsub
 from testing.mobly.platforms.bluetooth.bes import constants
 from testing.mobly.platforms.bluetooth.bes import logger
@@ -254,15 +255,46 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
     )
 
     try:
-      # Builds serial connection with the board and starts streaming board
-      # output.
-      self._start_serial_connection()
-      self._generate_output_filename()
-      # Initializes Bluetooth address of the board.
-      self._set_bt_address_to_configured_address()
+      self._init_bes_connection()
+      return
+    except Exception:  # pylint: disable=broad-except
+      self.destroy()
+      if not config.enable_hard_reset:
+        raise
+      self.log.warning(
+          'Failed to initialize BES device. Start to try hard power on the'
+          ' board. If the board still fails to initialize, please contact lab'
+          ' team to manually recover the board.'
+      )
+
+    # Try to hard reset the BES board.
+    try:
+      bes_hid_tool.power_on_local()
+      self._init_bes_connection()
+      return
     except Exception:  # pylint: disable=broad-except
       self.destroy()
       raise
+
+  def _init_bes_connection(self) -> None:
+    """Initializes the BES board connection."""
+    # Builds serial connection with the board and starts streaming board
+    # output.
+    self._start_serial_connection()
+    self._generate_output_filename()
+    # Initializes Bluetooth address of the board.
+    try:
+      self._set_bt_address_to_configured_address()
+    except (BesCommandError, CommandTimeoutError):
+      self.log.exception(
+          'Failed to set Bluetooth address to configured address. Retrying.'
+      )
+      # Retry once if the command fails. If the USB connection is not stable,
+      # or the board is not in good state, there might be some junk data in
+      # UART input buffer of the board, causing the board to fail to recognize
+      # the target command. A retry helps in this case.
+      time.sleep(_BES_EXECUTION_TIMEOUT.total_seconds())
+      self._set_bt_address_to_configured_address()
 
   @property
   def debug_tag(self) -> str:

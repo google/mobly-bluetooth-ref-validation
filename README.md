@@ -57,7 +57,7 @@ And implemented the corresponding Mobly controller
     Take down the serial numbers of your Android devices. We'll need them in the
     following steps.
 
-### Prepare BES device
+### Prepare BES Device
 
 If you use the BES Bluetooth dev board as the reference device, please follow
 these steps:
@@ -98,6 +98,35 @@ Command to list the available ports:
 ```bash
 mode
 ```
+
+#### Optional: Enable Hard Reset on BES
+
+BES v2 boards support touchless power on and hard reset. To enable this
+feature, please follow these steps:
+
+1.  Give current user system permissions to run HID tool without password.
+
+    ```bash
+    $ echo "$USER ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/$USER
+    $ sudo usermod -a -G dialout $USER
+    $ sudo usermod -a -G audio $USER
+    ```
+
+1.  Connect the `USB-CONTROL` port of the board with your PC/workstation with
+    USB cable.
+
+1.  In the YAML config, set `enable_hard_reset: true`.
+
+    ```yaml
+    TestBeds:
+      - Name: LocalTestbed
+        Controllers:
+          BluetoothReferenceDevice:
+          - controller_name: BtBoardDevice
+            serial_port: '/dev/ttyUSB0'
+            bluetooth_address: '11:22:33:44:55:66'
+            enable_hard_reset: true
+    ```
 
 ##  Prepare Test suite and configs
 

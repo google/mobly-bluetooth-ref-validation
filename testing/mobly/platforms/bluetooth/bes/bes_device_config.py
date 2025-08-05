@@ -71,6 +71,8 @@ class DeviceConfig:
     bluetooth_address: The Bluetooth MAC address of the BES dev board connected
       to the Mobly host or the Raspberry Pi.
     shell_mode: Whether to use Linux shell to send command to the board.
+    enable_hard_reset: Whether to try to hard reset the board when fail to init.
+      Hard reset is enabled only on Linux.
     dimensions: The field for user to pass MH dimensions or custom configs of
       the BES device.
   """
@@ -79,6 +81,7 @@ class DeviceConfig:
   serial_port: str
   bluetooth_address: str
   shell_mode: bool = False
+  enable_hard_reset: bool = False
 
   # MH dimensions of this testbed. The dimensions can then be used to filter
   # devices in the test. Dimensions can also be set in local testbeds.
@@ -98,8 +101,9 @@ class DeviceConfig:
       raise ConfigError(
           f'{_INVALID_BLUETOOTH_ADDRESS_MSG}: {self.bluetooth_address}'
       )
-    if sys.platform != 'linux':
+    if if sys.platform not in ('linux', 'linux2'):
       self.shell_mode = False
+      self.enable_hard_reset = False
 
   def get(self, key: str, default_value: Any = None) -> Any:
     """Gets the value of the key in device config or its dimensions.

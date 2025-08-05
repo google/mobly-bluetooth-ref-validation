@@ -20,10 +20,12 @@ TestBeds:
     - controller_name: BesDevice
       serial_port: '/dev/ttyUSB0'
       bluetooth_address: '11:11:22:33:33:61'
+      enable_hard_reset: false
       dimensions:
         role: 'primary'
     - controller_name: BesDevice
       serial_port: '/dev/ttyUSB1'
       bluetooth_address: '11:11:22:33:33:60'
+      enable_hard_reset: false
       dimensions:
         role: 'secondary'
