@@ -39,7 +39,7 @@ And implemented the corresponding Mobly controller
 1.  Go to `Settings > System > Developer options`. Set `Disable Bluetooth LE
     audio` to **OFF**, and `Bypass Bluetooth LE Audio Allowlist` to **ON**.
 
-1.  Go to `Settings > Google > Devices&sharing > Devices`. Set both
+1.  Go to `Settings > Google services > All services > Devices`. Set both
     `Scan for nearby devices` and `Include debug results` to **ON**.
 
 1.  Connect the Android device to your PC/workstation. You will be running the
