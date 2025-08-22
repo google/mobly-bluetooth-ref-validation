@@ -77,8 +77,9 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
 
   def test_2_set_battery_level_and_pair(self) -> None:
     self.ref_primary.set_battery_level_tws(_BATTERY_LEFT, _BATTERY_RIGHT)
-    self.ref_primary.get_battery_level()
-    self.ref_secondary.get_battery_level()
+    (battery_left, battery_right, _) = self.ref_primary.get_battery_level_tws()
+    asserts.assert_equal(battery_left, _BATTERY_LEFT)
+    asserts.assert_equal(battery_right, _BATTERY_RIGHT)
 
     self.ref_primary.start_pairing_mode()
     # Pair the Android phone with ref.

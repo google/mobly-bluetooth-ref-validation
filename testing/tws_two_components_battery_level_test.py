@@ -79,7 +79,9 @@ class TwsTwoComponentsTest(bt_base_test.BtRefBaseTest):
     self.ref_primary.set_battery_level_tws(
         _BATTERY_LEFT, _BATTERY_RIGHT, _BATTERY_CASE
     )
-    self.ref_primary.get_battery_level()
+    (battery_left, battery_right, _) = self.ref_primary.get_battery_level_tws()
+    asserts.assert_equal(battery_left, _BATTERY_LEFT)
+    asserts.assert_equal(battery_right, _BATTERY_RIGHT)
 
     self.ref_primary.start_pairing_mode()
     # Pair the Android phone with ref.

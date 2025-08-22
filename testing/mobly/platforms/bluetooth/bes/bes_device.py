@@ -84,12 +84,17 @@ _DEVICE_INFO_PATTERN = re.compile(r'(?P<key>.*): (?P<value>.*)')
 _GET_VOLUME_PATTERN = re.compile(r'.*volume=(?P<level>\d+).*')
 _GET_BLE_VOLUME_PATTERN = re.compile(r'.*BLE volume=(?P<level>\d+).*')
 _GET_BATTERY_LEVEL_PATTERN = re.compile(r'.*battery_level: (?P<level>\d+).*')
+_GET_BATTERY_LEVEL_TWS_PATTERN = re.compile(
+    r'Main ear battery_level: (?P<left_level>\d+)\nRemote ear battery_level:'
+    r' (?P<right_level>\d+)(\nCase battery_level: (?P<case_level>\d+))?.*'
+)
 _SEPARATER = '\r\n' if sys.platform == 'win32' else '\n'
 _PAIRED_DEVICE_INFO_PATTERN = re.compile(
     rf'addr: (?P<addr>.*){_SEPARATER}.*name: (?P<name>.*)'
 )
 _LE_PAIRED_DEVICE_INFO_PATTERN = re.compile(r'BLE addr: (?P<addr>.*)')
 _BOX_STATE_PATTERN = re.compile(r'box_state=(?P<state>.*)')
+_ACCESS_MODE_PATTERN = r'.*Access mode changed to {access_mode}.*'
 
 # The key name mapping from BES response to `BluetoothInfo` dataclass
 _DEVICE_INFO_KEY_MAP = {
@@ -131,6 +136,34 @@ class BesCommandError(BesRuntimeError):
         'BES command execution failed on the board. '
         f'Command: {command}. Error type: {ErrorType(error_code)}'
     )
+
+
+class AccessMode(enum.IntEnum):
+  """The type of the BES runtime error."""
+  INIT_PAIRING = 0
+  DISABLE_PAIRING = 2
+  ENABLE_PAIRING = 3
+
+
+@enum.unique
+class AncMode(enum.IntEnum):
+  """The ANC mode of the device."""
+  OFF = 0
+  ON = 1
+  TRANSPARENT = 2
+
+  @classmethod
+  def from_string(cls, mode: str) -> 'AncMode':
+    """Converts a string to an ANC mode."""
+    mode = mode.lower()
+    if mode == 'off':
+      return cls.OFF
+    elif mode == 'on':
+      return cls.ON
+    elif mode in ('transparent', 'transparency'):
+      return cls.TRANSPARENT
+    else:
+      raise ValueError(f'Invalid ANC mode: {mode}')
 
 
 def create(configs: Sequence[dict[str, Any]]) -> List[BesDevice]:
@@ -494,7 +527,10 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
     self.log.info(f'BES firmware version: {self._version}')
 
   def _reboot_and_wait_for_completion(
-      self, reboot_command: str, fail_message: str
+      self,
+      reboot_command: str,
+      fail_message: str,
+      access_mode_after_reboot: AccessMode = AccessMode.INIT_PAIRING,
   ) -> None:
     """Executes the reboot command and waits for the reboot completion."""
     if self._publisher is None:
@@ -506,6 +542,11 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
             pattern=_FIRMWARE_BUILD_DATE_PATTERN
         ) as build_date,
         self._publisher.event(pattern=_FIRMWARE_VERSION_PATTERN) as version,
+        self._publisher.event(
+            pattern=_ACCESS_MODE_PATTERN.format(
+                access_mode=access_mode_after_reboot
+            )
+        ) as access_mode,
     ):
       self._send_bes_command(reboot_command, wait_response=False)
       if version.wait(timeout=_REBOOT_TIMEOUT) and version.trigger is not None:
@@ -514,20 +555,31 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
         )
       if not reboot_done.wait(timeout=_REBOOT_TIMEOUT):
         raise BesRuntimeError(fail_message)
+      if not access_mode.wait(timeout=_REBOOT_TIMEOUT):
+        raise BesRuntimeError(
+            f'Failed to wait for access mode {access_mode_after_reboot} after'
+            ' reboot.'
+        )
+
+    # Wait for a short time to reduce flakiness.
+    time.sleep(_REBOOT_WAIT_TIME.total_seconds())
 
   def reboot(self) -> None:
     self._reboot_and_wait_for_completion(
         reboot_command=constants.BESCommand.REBOOT,
-        fail_message='Failed to wait for device reboot.'
+        fail_message='Failed to wait for device reboot.',
     )
 
-  def factory_reset(self) -> None:
+  def factory_reset(self, wait_for_access: bool = True) -> None:
     self._reboot_and_wait_for_completion(
         reboot_command=constants.BESCommand.FACTORY_RESET,
         fail_message='Failed to wait for device factory reset.',
+        access_mode_after_reboot=(
+            AccessMode.ENABLE_PAIRING
+            if wait_for_access
+            else AccessMode.INIT_PAIRING
+        ),
     )
-    # Wait for some time for the board to auto enter pairing mode
-    time.sleep(_RESET_WAIT_TIME.total_seconds())
 
   def power_on(self) -> None:
     self.open_box()
@@ -672,10 +724,10 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
     raise NotImplementedError('Not implemented yet.')
 
   def set_single_point(self) -> None:
-    self._send_bes_command(f'{constants.BESCommand.SET_LINK_POINT} 0')
+    self._send_bes_command(f'{constants.BESCommand.SET_LINK_POINT} 1')
 
   def set_multi_point(self) -> None:
-    self._send_bes_command(f'{constants.BESCommand.SET_LINK_POINT} 1')
+    self._send_bes_command(f'{constants.BESCommand.SET_LINK_POINT} 2')
 
   def start_pairing_mode(
       self, timeout: Optional[datetime.timedelta] = None
@@ -715,14 +767,11 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
   def get_anc_mode(self) -> str:
     raise NotImplementedError('Not implemented yet.')
 
-  def set_anc_mode(self, mode: str) -> None:
-    mode = mode.lower()
-    if mode == 'off':
-      self._send_bes_command(f'{constants.BESCommand.SET_ANC_MODE} 0')
-    elif mode == 'on':
-      self._send_bes_command(f'{constants.BESCommand.SET_ANC_MODE} 1')
-    elif mode in ('transparent', 'transparency'):
-      self._send_bes_command(f'{constants.BESCommand.SET_ANC_MODE} 2')
+  @override
+  def set_anc_mode(self, mode: str | AncMode) -> None:
+    if isinstance(mode, str):
+      mode = AncMode.from_string(mode)
+    self._send_bes_command(f'{constants.BESCommand.SET_ANC_MODE} {mode.value}')
 
   def get_spatial_audio_support(self) -> bool:
     return True
@@ -868,17 +917,40 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
     self._send_bes_command(constants.BESCommand.CLOSE_BOX)
 
   def set_battery_level(self, level: int) -> None:
-    if level < 0 or level > 100:
+    """Sets the fake battery level of the device.
+
+    Args:
+      level: The fake battery level of the device, in the range of 0-100.
+        `level=80` represents that the battery is 80% full.
+
+    Raises:
+      ValueError: If the given battery level is not in the valid range.
+    """
+    if not 0 <= level <= 100:
       raise ValueError(
           f'Invalid battery level {level}, should be in the range of 0-100.'
       )
     self._send_bes_command(
-        f'{constants.BESCommand.SET_BATTERY_LEVEL} {level}'
+        f'{constants.BESCommand.SET_BATTERY_LEVEL} {level} {level}'
     )
 
   def set_battery_level_tws(
-      self, left_level: int, right_level: int, case_level: int | None = None
+      self, left_level: int, right_level: int, case_level: int | None = None,
   ) -> None:
+    """Sets the fake battery level of the earbuds in a TWS pair.
+
+    Args:
+      left_level: The fake battery level of the left earbud in a pair of TWS
+        earbuds, in the range of 0-100. `level=80` represents that the battery
+        is 80% full.
+      right_level: The fake battery level of the right earbud in a pair of TWS
+        earbuds, in the range of 0-100
+      case_level: The fake battery level of the case in a pair of TWS earbuds,
+        in the range of 0-100. If None, there will be no case level set.
+
+    Raises:
+      ValueError: If the given battery level is not in the valid range.
+    """
     if not 0 <= left_level <= 100:
       raise ValueError(
           f'Invalid battery level {left_level}, should be in the range of'
@@ -889,21 +961,26 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
           f'Invalid battery level {right_level}, should be in the range of'
           ' 0-100.'
       )
-    if case_level is None:
-      self._send_bes_command(
-          f'{constants.BESCommand.SET_BATTERY_LEVEL} {left_level} {right_level}'
+    if case_level is not None and not 0 <= case_level <= 100:
+      raise ValueError(
+          f'Invalid battery level {case_level}, should be in the range of'
+          ' 0-100.'
       )
-    else:
+    if case_level is not None:
       self._send_bes_command(
           f'{constants.BESCommand.SET_BATTERY_LEVEL} {left_level} {right_level}'
           f' {case_level}'
       )
+    else:
+      self._send_bes_command(
+          f'{constants.BESCommand.SET_BATTERY_LEVEL} {left_level} {right_level}'
+      )
 
   def get_battery_level(self) -> int:
-    """Gets the fake battery level of the device.
+    """Gets the fake battery level of the board.
 
     Returns:
-      The fake battery level of the device, in the range of 0-100.
+      The fake battery level of the board, in the range of 0-100.
       `level=80` represents that the battery is 80% full.
 
     Raises:
@@ -915,6 +992,39 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
       return int(matched['level'])
     raise BesRuntimeError(
         f'Failed to get battery level from command result: {result}'
+    )
+
+  def get_battery_level_tws(self) -> tuple[int, int, int | None]:
+    """Gets the fake battery level of the board and its remote peer in TWS mode.
+
+    Returns:
+      A tuple of 3 integers, representing the fake battery level of the left
+      earbud, right earbud, and case in a TWS device, in the range of 0-100.
+      `level=80` represents that the battery is 80% full. The case level will
+      be None if the BES is not v2.
+
+    Raises:
+      BesRuntimeError: If failed to get valid battery level from the BES
+        response.
+    """
+    result = self._send_bes_command(constants.BESCommand.GET_BATTERY_LEVEL)
+    if matched := _GET_BATTERY_LEVEL_TWS_PATTERN.match(result):
+      left_level = int(matched['left_level'])
+      right_level = int(matched['right_level'])
+      case_level = int(matched['case_level']) if matched['case_level'] else None
+      if (
+          left_level < 0
+          or left_level > 100
+          or right_level < 0
+          or right_level > 100
+      ):
+        raise BesRuntimeError(
+            f'Failed to get valid battery level from command result: {result}'
+        )
+      return left_level, right_level, case_level
+    raise BesRuntimeError(
+        'Failed to get battery level of TWS earbuds from command result:'
+        f' {result}'
     )
 
   def get_paired_devices(self) -> List[Dict[str, str]]:
