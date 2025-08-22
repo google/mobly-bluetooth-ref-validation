@@ -29,3 +29,5 @@ TestBeds:
       enable_hard_reset: false
       dimensions:
         role: 'secondary'
+MoblyParams:
+  LogPath: 'C:/User/<username>/AppData/Local/Temp'
