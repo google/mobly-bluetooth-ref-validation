@@ -71,7 +71,7 @@ _WRITE_SERIAL_COMMAND = 'echo -e -n "{command}" > {serial_port}'
 
 # The wait time for a command to process
 _SEND_BES_COMMAND_INTERVAL = datetime.timedelta(seconds=1)
-_RESET_WAIT_TIME = datetime.timedelta(seconds=6)
+_REBOOT_WAIT_TIME = datetime.timedelta(seconds=3)
 _BES_EXECUTION_TIMEOUT = datetime.timedelta(seconds=10)
 _REBOOT_TIMEOUT = datetime.timedelta(seconds=30)
 
@@ -767,7 +767,6 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
   def get_anc_mode(self) -> str:
     raise NotImplementedError('Not implemented yet.')
 
-  @override
   def set_anc_mode(self, mode: str | AncMode) -> None:
     if isinstance(mode, str):
       mode = AncMode.from_string(mode)

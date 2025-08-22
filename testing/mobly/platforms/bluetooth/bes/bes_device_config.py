@@ -101,7 +101,7 @@ class DeviceConfig:
       raise ConfigError(
           f'{_INVALID_BLUETOOTH_ADDRESS_MSG}: {self.bluetooth_address}'
       )
-    if if sys.platform not in ('linux', 'linux2'):
+    if sys.platform not in ('linux', 'linux2'):
       self.shell_mode = False
       self.enable_hard_reset = False
 
