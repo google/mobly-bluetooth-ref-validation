@@ -18,13 +18,13 @@ TestBeds:
     AndroidDevice: '*'
     BluetoothReferenceDevice:
     - controller_name: BesDevice
-      serial_port: '/dev/ttyUSB0'
+      serial_port: 'COM7'
       bluetooth_address: '11:22:23:33:33:61'
       enable_hard_reset: false
       dimensions:
         role: 'primary'
     - controller_name: BesDevice
-      serial_port: '/dev/ttyUSB1'
+      serial_port: 'COM8'
       bluetooth_address: '11:22:23:33:33:60'
       enable_hard_reset: false
       dimensions:
