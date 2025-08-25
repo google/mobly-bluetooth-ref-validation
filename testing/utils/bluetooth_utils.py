@@ -189,6 +189,7 @@ def setup_android_device(
     set_bluetooth_le_audio(ad, False)
 
   android_utils.load_mbs_and_uiautomator(ad, uiautomator_snippet_name='uia')
+  android_utils.load_bluetooth_snippet(self.ad)
 
   # Enable Bluetooth
   if not ad.mbs.btIsEnabled():
