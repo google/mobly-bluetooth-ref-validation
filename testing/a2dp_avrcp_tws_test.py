@@ -31,6 +31,7 @@ _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=3)
 _MEDIA_PLAY_DURATION = datetime.timedelta(seconds=10)
 
 _YOUTUBE_VIDEO_ID = 'UQIlEgvTKY4'
+_MEDIA_FILE = 'testing/assets/test_audio_music.wav'
 
 
 class MediaControlTest(bt_base_test.BtRefBaseTest):
@@ -82,9 +83,8 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
     # Open Youtube and start playing video.
     # We can't use Mobly snippet to play audio here because the audio played by
     # MBS cannot be paused from the headset.
-    with bluetooth_utils.play_youtube_video_on_android(
-        self.ad, youtube_video_id=_YOUTUBE_VIDEO_ID
-    ):
+    try:
+      ad.bt.Meida3StartLocalFile(_MEDIA_FILE)
 
       bluetooth_utils.assert_wait_condition_true(
           lambda: self.ad.mbs.btIsA2dpPlaying(ref_address),
