@@ -33,11 +33,11 @@ from testing import tws_two_components_battery_level_test
 
 if __name__ == '__main__':
   suite_runner.run_suite([
-      # bt_pair_tws_test.BtPairTwsTest,
-      # a2dp_tws_test.MediaPlayTest,
+      bt_pair_tws_test.BtPairTwsTest,
+      a2dp_tws_test.MediaPlayTest,
       a2dp_avrcp_tws_test.MediaControlTest,
-      # tws_one_component_battery_level_test.TwsOneComponentTest,
-      # tws_two_components_battery_level_test.TwsTwoComponentsTest,
+      tws_one_component_battery_level_test.TwsOneComponentTest,
+      tws_two_components_battery_level_test.TwsTwoComponentsTest,
       power_on_off_tws_test.PowerOnOffTwsTest,
       lea_connection_tws_test.LEAConnectionTest,
       lea_audio_streaming_tws_test.LEAudioTest,
