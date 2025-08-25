@@ -30,4 +30,4 @@ TestBeds:
       dimensions:
         role: 'secondary'
 MoblyParams:
-  LogPath: 'C:/User/<username>/AppData/Local/Temp'
+  LogPath: 'C:/User/testuser/AppData/Local/Temp'
