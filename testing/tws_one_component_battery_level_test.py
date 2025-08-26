@@ -50,7 +50,7 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad, enable_wifi=True, enable_le_audio=True)
 
     # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
@@ -59,6 +59,10 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
         lambda d: d.factory_reset(),
         [[self.ref_primary], [self.ref_secondary]],
         raise_on_exception=True,
+    )
+    bluetooth_utils.mbs_pair_devices(self.ad, self.ref_primary.bluetooth_address)
+    bluetooth_utils.set_le_audio_state_on_paired_device(
+        self.ad, True, skip_if_no_button=True
     )
 
   def test_1_set_tws_one_component(self) -> None:

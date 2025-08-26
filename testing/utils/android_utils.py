@@ -25,7 +25,7 @@ _MBS_UI_APK_PATH = 'testing/assets/mbs_uiautomator.apk'
 _MBS_UI_PACKAGE = 'com.google.devtools.bettertogether.mbsuiautomator'
 
 _BT_SNIPPET_APK_PATH = 'testing/assets/bluetooth_snippets.apk'
-_BT_SNIPPET_PACKAGE = 'com.google.bluetooth.snippet'
+_BT_SNIPPET_PACKAGE = 'com.google.snippet.bluetooth'
 
 _DELAY_AFTER_CHANGE_BT_STATUS = datetime.timedelta(seconds=3)
 
@@ -42,7 +42,8 @@ def load_bluetooth_snippet(
       UiAutomator.
     mbs_snippet_name: The attribute name attached the BT snippet client.
   """
-  ad.adb.install(_BT_SNIPPET_APK_PATH, replace=True)
+
+  ad.adb.install(_BT_SNIPPET_APK_PATH)
   ad.load_snippet('bt', _BT_SNIPPET_PACKAGE)
 
 def load_mbs_and_uiautomator(

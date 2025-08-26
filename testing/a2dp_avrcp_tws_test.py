@@ -17,6 +17,7 @@
 import datetime
 import logging
 import time
+import os
 
 from mobly import asserts
 from mobly import test_runner
@@ -30,7 +31,7 @@ from testing.utils import bluetooth_utils
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=3)
 _MEDIA_PLAY_DURATION = datetime.timedelta(seconds=10)
 
-_YOUTUBE_VIDEO_ID = 'UQIlEgvTKY4'
+_MEDIA_LOCAL_PATH = '/data/local/tmp/test_audio_music.wav'
 _MEDIA_FILE = 'testing/assets/test_audio_music.wav'
 
 
@@ -46,11 +47,15 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad, enable_wifi=True)
+    bluetooth_utils.setup_android_device(self.ad, enable_wifi=True, enable_le_audio=False)
 
     # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
     self.ref_primary, self.ref_secondary = bluetooth_utils.get_tws_device(refs)
+
+    self.ad.adb.shell("pm grant com.google.snippet.bluetooth android.permission.READ_EXTERNAL_STORAGE")
+    self.ad.adb.shell("pm grant com.google.snippet.bluetooth android.permission.WRITE_EXTERNAL_STORAGE")
+
 
   def setup_test(self):
     # Pair the devices
@@ -79,13 +84,18 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
 
   def test_media_play_and_control(self):
     ref_address = self.ref_primary.bluetooth_address.upper()
+    self.ad.adb.push([_MEDIA_FILE, _MEDIA_LOCAL_PATH])
 
     # Open Youtube and start playing video.
     # We can't use Mobly snippet to play audio here because the audio played by
     # MBS cannot be paused from the headset.
     try:
-      ad.bt.Meida3StartLocalFile(_MEDIA_FILE)
+      self.ad.bt.media3StartLocalFile(_MEDIA_LOCAL_PATH)
 
+      bluetooth_utils.assert_wait_condition_true(
+          lambda: self.ad.bt.media3IsPlayerPlaying(),
+          fail_message='Failed to start playing media.',
+      )
       bluetooth_utils.assert_wait_condition_true(
           lambda: self.ad.mbs.btIsA2dpPlaying(ref_address),
           fail_message='Failed to start playing media.',
@@ -142,6 +152,12 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
 
       self.ref_primary.media_prev()
       time.sleep(_MEDIA_PLAY_DURATION.total_seconds())
+    finally:
+      self.ad.bt.media3Stop()
+      bluetooth_utils.assert_wait_condition_true(
+          lambda: not self.ad.mbs.btIsA2dpPlaying(ref_address),
+          fail_message='Failed to stop media.',
+      )
 
   def teardown_test(self):
     bluetooth_utils.clear_bonded_devices(self.ad)
