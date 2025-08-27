@@ -635,3 +635,10 @@ def play_youtube_video_on_android(
   finally:
     # Stops video playing
     ad.adb.shell(f'am force-stop {_YOUTUBE_PKG}')
+
+
+def is_media_route_on_lea(
+    ad: android_device.AndroidDevice, target_address: str
+) -> bool:
+  """Returns True if the media route is on LE Audio device, False otherwise."""
+  return ad.bt.media3IsLeaStreamActive() and ad.bt.btIsLeAudioConnected(target_address)

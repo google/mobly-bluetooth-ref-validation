@@ -86,7 +86,6 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
     ref_address = self.ref_primary.bluetooth_address.upper()
     self.ad.adb.push([_MEDIA_FILE, _MEDIA_LOCAL_PATH])
 
-    # Open Youtube and start playing video.
     # We can't use Mobly snippet to play audio here because the audio played by
     # MBS cannot be paused from the headset.
     try:

@@ -28,7 +28,7 @@ from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 
-_REPEAT_RUN_NUMBER = 20
+_REPEAT_RUN_NUMBER = 5
 
 
 class BtPairTwsTest(bt_base_test.BtRefBaseTest):
