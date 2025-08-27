@@ -187,7 +187,8 @@ def setup_android_device(
     set_bluetooth_le_audio(ad, True)
   else:
     set_bluetooth_le_audio(ad, False)
-
+    
+  android_utils.load_bluetooth_snippet(ad)
   android_utils.load_mbs_and_uiautomator(ad, uiautomator_snippet_name='uia')
 
   # Enable Bluetooth
@@ -633,3 +634,10 @@ def play_youtube_video_on_android(
   finally:
     # Stops video playing
     ad.adb.shell(f'am force-stop {_YOUTUBE_PKG}')
+
+
+def is_media_route_on_lea(
+    ad: android_device.AndroidDevice, target_address: str
+) -> bool:
+  """Returns True if the media route is on LE Audio device, False otherwise."""
+  return ad.bt.media3IsLeaStreamActive() and ad.bt.btIsLeAudioConnected(target_address)

@@ -724,10 +724,10 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
     raise NotImplementedError('Not implemented yet.')
 
   def set_single_point(self) -> None:
-    self._send_bes_command(f'{constants.BESCommand.SET_LINK_POINT} 1')
+    self._send_bes_command(f'{constants.BESCommand.SET_LINK_POINT} 0')
 
   def set_multi_point(self) -> None:
-    self._send_bes_command(f'{constants.BESCommand.SET_LINK_POINT} 2')
+    self._send_bes_command(f'{constants.BESCommand.SET_LINK_POINT} 1')
 
   def start_pairing_mode(
       self, timeout: Optional[datetime.timedelta] = None
