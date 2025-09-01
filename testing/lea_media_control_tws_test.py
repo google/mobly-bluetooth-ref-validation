@@ -33,11 +33,6 @@ _MEDIA_FILE = 'testing/assets/test_audio_music.wav'
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=3)
 _MEDIA_PLAY_DURATION = datetime.timedelta(seconds=10)
 
-# Regex for detection of LE Audio streaming success logcat line
-_LE_AUDIO_STREAMING_PATTERN = r'.*ASE state: Streaming \(0x4\).*'
-_LE_AUDIO_IDLE_PATTERN = r'.*ASE state: Idle \(0x0\).*'
-_BT_LOGCAT_TAG = 'bluetooth'
-
 
 class LEAudioControlTest(bt_base_test.BtRefBaseTest):
   """Test class for LE Audio control test on Android + reference device."""

@@ -18,24 +18,17 @@ import datetime
 import logging
 import time
 
-from mobly import asserts
 from mobly import test_runner
-from mobly import utils
 from mobly.controllers import android_device
 
 from testing import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
 from testing.utils import bluetooth_utils
 
-_AUDIO_FILE_PATH = 'testing/assets/test_audio_music.wav'
+_MEDIA_LOCAL_PATH = '/data/local/tmp/test_audio_music.wav'
+_MEDIA_FILE = 'testing/assets/test_audio_music.wav'
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=3)
-_AUDIO_PLAY_DURATION = datetime.timedelta(seconds=15)
-_AUDIO_PLAY_INTERVAL = datetime.timedelta(seconds=10)
-
-# Regex for detection of LE Audio streaming success logcat line
-_LE_AUDIO_STREAMING_PATTERN = r'.*ASE state: Streaming \(0x4\).*'
-_BT_LOGCAT_TAG = 'bluetooth'
 
 
 class LEAudioTest(bt_base_test.BtRefBaseTest):
@@ -69,27 +62,23 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
     self.lea_enabled = True
 
   def test_2_audio_streaming(self):
-    asserts.skip_if(
-        not hasattr(self, 'lea_enabled'),
-        'LEA not enabled. Skip following steps.',
-    )
+    ref_address = self.ref.bluetooth_address.upper()
+    self.ad.adb.push([_MEDIA_FILE, _MEDIA_LOCAL_PATH])
 
-    # Start audio playing
-    self.ad.log.info('Start playing audio...')
-    with bluetooth_utils.push_and_play_audio_on_android(
-        self.ad, _AUDIO_FILE_PATH
-    ):
-      # Check the ASE state is Streaming
-      with self.ad.services.logcat_pubsub.event(
-          pattern=_LE_AUDIO_STREAMING_PATTERN, tag=_BT_LOGCAT_TAG, level='I'
-      ) as ase_state_event:
-        asserts.assert_true(
-            ase_state_event.wait(timeout=_AUDIO_PLAY_DURATION),
-            'Failed to start LEA streaming after playing music for 15 seconds',
-        )
-      time.sleep(_AUDIO_PLAY_INTERVAL.total_seconds())
+    try:
+      self.ad.bt.media3StartLocalFile(_MEDIA_LOCAL_PATH)
 
-    self.ad.log.info('Finished audio playing.')
+      bluetooth_utils.assert_wait_condition_true(
+          lambda: self.ad.bt.media3IsPlayerPlaying(),
+          fail_message='Failed to start playing media.',
+      )
+      bluetooth_utils.assert_wait_condition_true(
+          lambda: bluetooth_utils.is_media_route_on_lea(self.ad, ref_address),
+          fail_message='Failed to start playing media.',
+      )
+    finally:
+      # Stops video playing
+      self.ad.bt.media3Stop()
 
   def teardown_test(self):
     self.ad.services.create_output_excerpts_all(self.current_test_info)

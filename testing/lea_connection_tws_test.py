@@ -28,8 +28,6 @@ from testing.mobly.platforms.bluetooth import bluetooth_reference_device
 from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
-_LONG_DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=30)
-_WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=60)
 _WAIT_BLUETOOTH_STATE_CHANGE = datetime.timedelta(seconds=45)
 
 
@@ -82,8 +80,6 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     self.ad.mbs.btLeAudioConnect(self.ref_primary.bluetooth_address)
 
   def test_lea_connect_disconnect(self) -> None:
-    android_address = self.ad.mbs.btGetAddress()
-
     self.ad.log.info('Connect LE Audio device.')
     bluetooth_utils.assert_wait_condition_true(
         lambda: self.ad.bt.btIsLeAudioConnected(
