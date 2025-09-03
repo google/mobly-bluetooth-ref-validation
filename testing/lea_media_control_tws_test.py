@@ -27,7 +27,8 @@ from testing import bt_base_test
 from testing.mobly.platforms.bluetooth import bluetooth_reference_device
 from testing.utils import bluetooth_utils
 
-_YOUTUBE_VIDEO_ID = 'UQIlEgvTKY4'
+_MEDIA_LOCAL_PATH = '/data/local/tmp/test_audio_music.wav'
+_MEDIA_FILE = 'testing/assets/test_audio_music.wav'
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=3)
 _MEDIA_PLAY_DURATION = datetime.timedelta(seconds=10)
@@ -94,18 +95,19 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
     # Open Youtube and start playing video.
     # We can't use Mobly snippet to play audio here because the audio played by
     # MBS cannot be paused from the headset.
-    self.ad.log.info('Start playing media...')
-    with bluetooth_utils.play_youtube_video_on_android(
-        self.ad, youtube_video_id=_YOUTUBE_VIDEO_ID
-    ):
-      # Check the ASE state is Streaming
-      with self.ad.services.logcat_pubsub.event(
-          pattern=_LE_AUDIO_STREAMING_PATTERN, tag=_BT_LOGCAT_TAG, level='I'
-      ) as ase_state_event:
-        asserts.assert_true(
-            ase_state_event.wait(timeout=_MEDIA_PLAY_DURATION),
-            '[Start playing] Failed to start LEA streaming.',
-        )
+    try:
+      ref_address = self.ref_primary.bluetooth_address.upper()
+      self.ad.adb.push([_MEDIA_FILE, _MEDIA_LOCAL_PATH])
+      self.ad.bt.media3StartLocalFile(_MEDIA_LOCAL_PATH)
+
+      bluetooth_utils.assert_wait_condition_true(
+          lambda: self.ad.bt.media3IsPlayerPlaying(),
+          fail_message='Failed to start playing media.',
+      )
+      bluetooth_utils.assert_wait_condition_true(
+          lambda: bluetooth_utils.is_media_route_on_lea(self.ad, ref_address),
+          fail_message='Failed to start playing media.',
+      )
 
       #################################################################
       # Volume control
@@ -134,23 +136,21 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
       #################################################################
       # Media pause/play
       #################################################################
-      with self.ad.services.logcat_pubsub.event(
-          pattern=_LE_AUDIO_IDLE_PATTERN, tag=_BT_LOGCAT_TAG, level='I'
-      ) as ase_state_event:
-        self.ref_primary.media_pause()
-        asserts.assert_true(
-            ase_state_event.wait(timeout=_MEDIA_PLAY_DURATION),
-            'Failed to pause media stream.',
-        )
+      self.ref_primary.media_pause()
+      bluetooth_utils.assert_wait_condition_true(
+          lambda: not self.ad.bt.media3IsPlayerPlaying(),
+          fail_message='Failed to pause media.',
+      )
 
-      with self.ad.services.logcat_pubsub.event(
-          pattern=_LE_AUDIO_STREAMING_PATTERN, tag=_BT_LOGCAT_TAG, level='I'
-      ) as ase_state_event:
-        self.ref_primary.media_play()
-        asserts.assert_true(
-            ase_state_event.wait(timeout=_MEDIA_PLAY_DURATION),
-            'Failed to resume media stream.',
-        )
+      self.ref_primary.media_play()
+      bluetooth_utils.assert_wait_condition_true(
+          lambda: self.ad.bt.media3IsPlayerPlaying(),
+          fail_message='Failed to pause media.',
+      )
+      bluetooth_utils.assert_wait_condition_true(
+          lambda: bluetooth_utils.is_media_route_on_lea(self.ad, ref_address),
+          fail_message='Failed to replay media.',
+      )
 
       #################################################################
       # Media fast forward/backward
@@ -161,6 +161,9 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
 
       self.ref_primary.media_prev()
       time.sleep(_MEDIA_PLAY_DURATION.total_seconds())
+    finally:
+      # Stops video playing
+      self.ad.bt.media3Stop()
 
     self.ad.log.info('Finished media streaming.')
 
