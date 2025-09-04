@@ -54,10 +54,11 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
   def test_1_pair_ref_and_enable_le_audio(self):
     # Discover and pair the devices
     bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
+    ref_address = self.ref.bluetooth_address.upper()
 
     # Enable LE Audio on Android
     self.ad.log.info('Enabling LE Audio...')
-    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, True)
+    self.ad.bt.btLeAudioConnect(ref_address)
     self.ad.log.info('LE Audio enabled.')
     self.lea_enabled = True
 
