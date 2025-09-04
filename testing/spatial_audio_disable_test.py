@@ -44,7 +44,6 @@ class SpatialAudioDisableTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    self.ad.reboot()
     bluetooth_utils.setup_android_device(self.ad)
 
     # Register Bluetooth reference device
