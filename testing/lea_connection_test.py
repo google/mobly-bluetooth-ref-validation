@@ -56,6 +56,30 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, True)
 
   def test_lea_connect_disconnect(self) -> None:
+    #################################################################
+    # Trigger disconnection / reconnection from the reference side.
+    #################################################################
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref.disconnect(android_address)
+    bluetooth_utils.assert_wait_condition_true(
+        is_disconnected,
+        _WAIT_FOR_UI_UPDATE,
+        '[Disconnection test 2/2] Fail to disconnect from the Bluetooth'
+        ' reference device.'
+    )
+
+    # Reconnect the headset
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref.connect(android_address)
+    asserts.assert_true(
+        self.ad.uia(text='Active').wait.exists(_WAIT_FOR_UI_UPDATE),
+        '[Reconnection test 2/2] Fail to reconnect from the Bluetooth'
+        ' reference device.'
+    )
+
+    #################################################################
+    # Trigger disconnection / reconnection from the reference side.
+    #################################################################
     self.ad.log.info('Connect LE Audio device.')
     bluetooth_utils.assert_wait_condition_true(
         lambda: self.ad.bt.btIsLeAudioConnected(
