@@ -58,7 +58,7 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
 
     # Enable LE Audio on Android
     self.ad.log.info('Enabling LE Audio...')
-    self.ad.bt.btLeAudioConnect(ref_address)
+    self.ad.mbs.btLeAudioConnect(ref_address)
     self.ad.log.info('LE Audio enabled.')
     self.lea_enabled = True
 
