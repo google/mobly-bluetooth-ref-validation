@@ -15,9 +15,7 @@
 """Test media play and control (A2DP/AVRCP) on Android + BT reference device."""
 
 import datetime
-import logging
 import time
-import os
 
 from mobly import asserts
 from mobly import test_runner

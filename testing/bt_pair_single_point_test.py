@@ -15,7 +15,6 @@
 """A Mobly Test to test Bluetooth pairing on single point reference device."""
 
 import datetime
-import logging
 import time
 
 from mobly import test_runner
@@ -61,7 +60,7 @@ class BtPairSinglePointTest(bt_base_test.BtRefBaseTest):
 
     # First device paired and connected.
     bluetooth_utils.mbs_pair_devices(self.ad_a, ref_address)
-    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad_a, False)
+    self.ad_a.mbs.btA2dpConnect(ref_address)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     bluetooth_utils.assert_device_connected(
         self.ad_a,

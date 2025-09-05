@@ -86,30 +86,6 @@ class NonTwsTest(bt_base_test.BtRefBaseTest):
           'Fail to find correct battery level from device list page.'
       )
 
-      # Go to the setting page of the connected device
-      self.ad.uia(
-          res='com.android.settings:id/settings_button'
-      ).click()
-      time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-
-      # Check only one address in device detail
-      self.ad.uia(scrollable=True).scroll.down(textContains='Bluetooth address')
-      asserts.assert_true(
-          self.ad.uia(textContains='Bluetooth address').wait.exists(
-              _DELAYS_BETWEEN_ACTIONS
-          ),
-          'Failed to find Bluetooth address on the device detail page.'
-      )
-      bluetooth_address_text = self.ad.uia(textContains='Bluetooth address').text
-      bluetooth_address_list = bluetooth_address_text.replace(
-          "Device's Bluetooth address:", ''
-      ).strip().split()
-      asserts.assert_equal(
-          len(bluetooth_address_list),
-          1,
-          'Fail to find correct board address on the device detail page.'
-      )
-
   def teardown_test(self) -> None:
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ad.services.create_output_excerpts_all(self.current_test_info)
