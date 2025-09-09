@@ -193,10 +193,11 @@ def setup_android_device(
 
   # Enable Bluetooth
   if not ad.mbs.btIsEnabled():
-    # ad.mbs.btEnable()
     ad.adb.shell('svc bluetooth enable')
-    ad.adb.shell('settings put global bluetooth_on 1')
-    ad.adb.shell('am broadcast -a android.intent.action.BLUETOOTH_ENABLE --ez_state true')
+      
+    # The way can enable blueooth same as 'svc bluetooth enable'
+    # ad.adb.shell('settings put global bluetooth_on 1')
+    # ad.adb.shell('am broadcast -a android.intent.action.BLUETOOTH_ENABLE --ez_state true')
 
   if enable_wifi:
     wifi_enable(ad)
