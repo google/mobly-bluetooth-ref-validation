@@ -77,8 +77,20 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     )
 
     #################################################################
-    # Trigger disconnection / reconnection from the reference side.
+    # Trigger disconnection / reconnection from the Android side.
     #################################################################
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ad.log.info('Disconnect LE Audio device.')
+    self.ad.bt.btLeAudioDisconnect(self.ref.bluetooth_address)
+    bluetooth_utils.assert_wait_condition_true(
+        lambda: not self.ad.bt.btIsLeAudioConnected(
+          self.ref.bluetooth_address
+        ),
+        _WAIT_BLUETOOTH_STATE_CHANGE,
+        'Fail to disconnect LE Audio device.'
+    )
+
+    
     self.ad.log.info('Connect LE Audio device.')
     bluetooth_utils.assert_wait_condition_true(
         lambda: self.ad.bt.btIsLeAudioConnected(
