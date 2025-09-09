@@ -106,6 +106,15 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     #################################################################
     # Trigger disconnection / reconnection from the reference side.
     #################################################################
+    # Reconnect the headset
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref.connect(android_address)
+    asserts.assert_true(
+        self.ad.uia(text='Active').wait.exists(_WAIT_FOR_UI_UPDATE),
+        '[Reconnection test 2/2] Fail to reconnect from the Bluetooth'
+    ' reference device.'
+    )
+    
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ref.disconnect(android_address)
 
@@ -114,15 +123,6 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
         _WAIT_FOR_UI_UPDATE,
         '[Disconnection test 2/2] Fail to disconnect from the Bluetooth'
         ' reference device.'
-    )
-
-      # Reconnect the headset
-    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-    self.ref.connect(android_address)
-    asserts.assert_true(
-        self.ad.uia(text='Active').wait.exists(_WAIT_FOR_UI_UPDATE),
-        '[Reconnection test 2/2] Fail to reconnect from the Bluetooth'
-    ' reference device.'
     )
 
   def teardown_test(self) -> None:
