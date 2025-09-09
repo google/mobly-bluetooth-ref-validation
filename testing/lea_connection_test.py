@@ -64,8 +64,7 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     bluetooth_utils.assert_wait_condition_true(
         is_disconnected,
         _WAIT_FOR_UI_UPDATE,
-        '[Disconnection test 2/2] Fail to disconnect from the Bluetooth'
-        ' reference device.'
+        'Fail to disconnect from the Bluetooth reference device.'
     )
 
     # Reconnect the headset
