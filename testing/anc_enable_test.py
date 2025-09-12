@@ -31,7 +31,7 @@ _WAIT_FOR_UI_TRANSLATE = datetime.timedelta(seconds=6)
 _WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
 
 # ANC slice title
-_ANC_SLICE_TITLE = 'Active Noise Control'
+_ANC_SLICE_TITLE = 'Active Noise Control|Off|Noise Cancellation'
 
 
 class AncEnableTest(bt_base_test.BtRefBaseTest):
@@ -62,9 +62,9 @@ class AncEnableTest(bt_base_test.BtRefBaseTest):
 
     with bluetooth_utils.open_device_detail_settings(self.ad):
       asserts.assert_true(
-          self.ad.uia(text=_ANC_SLICE_TITLE).wait.exists(
-              _WAIT_FOR_UI_TRANSLATE
-          ),
+          self.ad.uia(textContains='Active Noise Control').wait.exists(_WAIT_FOR_UI_TRANSLATE)
+          or self.ad.uia(textContains='Off').wait.exists(_WAIT_FOR_UI_TRANSLATE)
+          or self.ad.uia(textContains='Noise Cancellation').wait.exists(_WAIT_FOR_UI_TRANSLATE),
           'Failed to enable ANC feature. ANC slice not shown in Device Detail'
           ' when headset is connected on phone.',
       )

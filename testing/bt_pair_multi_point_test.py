@@ -15,7 +15,6 @@
 """A Mobly Test to test Bluetooth pairing on multi point reference device."""
 
 import datetime
-import logging
 import time
 
 from mobly import test_runner
@@ -61,7 +60,8 @@ class BtPairMultiPointTest(bt_base_test.BtRefBaseTest):
 
     # First device paired and connected.
     bluetooth_utils.mbs_pair_devices(self.ad_a, ref_address)
-    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad_a, False)
+    # bluetooth_utils.set_le_audio_state_on_paired_device(self.ad_a, False)
+    self.ad_a.mbs.btA2dpConnect(ref_address)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     bluetooth_utils.assert_device_connected(
         self.ad_a,
@@ -76,7 +76,8 @@ class BtPairMultiPointTest(bt_base_test.BtRefBaseTest):
 
     # Second device paired and connected. First device still connected.
     bluetooth_utils.mbs_pair_devices(self.ad_b, ref_address)
-    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad_b, False)
+    # bluetooth_utils.set_le_audio_state_on_paired_device(self.ad_b, False)
+    self.ad_b.mbs.btA2dpConnect(ref_address)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     bluetooth_utils.assert_device_connected(
         self.ad_b,
