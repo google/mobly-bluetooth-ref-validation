@@ -108,6 +108,16 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     #################################################################
     # Trigger disconnection / reconnection from the reference side.
     #################################################################
+    # Disconnect the headset
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref_primary.disconnect(android_address)
+    bluetooth_utils.assert_wait_condition_true(
+        lambda: not self.ad.bt.btIsLeAudioConnected(
+          self.ref_primary.bluetooth_address
+        ),
+        _WAIT_BLUETOOTH_STATE_CHANGE,
+        'Fail to disconnect LE Audio device.'
+    )
     # Reconnect the headset
     self.ad.mbs.btBecomeDiscoverable(_WAIT_FOR_UI_UPDATE.total_seconds())
     self.ad.mbs.btStartAutoAcceptIncomingPairRequest()
@@ -119,16 +129,6 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
         ),
         _WAIT_BLUETOOTH_STATE_CHANGE,
         'Fail to connect LE Audio device.'
-    )
-    
-    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-    self.ref_primary.disconnect(android_address)
-    bluetooth_utils.assert_wait_condition_true(
-        lambda: not self.ad.bt.btIsLeAudioConnected(
-          self.ref_primary.bluetooth_address
-        ),
-        _WAIT_BLUETOOTH_STATE_CHANGE,
-        'Fail to disconnect LE Audio device.'
     )
 
   def teardown_test(self) -> None:
