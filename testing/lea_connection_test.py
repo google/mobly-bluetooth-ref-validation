@@ -106,8 +106,6 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     )
 
     # Reconnect the headset
-    self.ad.mbs.btBecomeDiscoverable(_WAIT_FOR_UI_UPDATE.total_seconds())
-    self.ad.mbs.btStartAutoAcceptIncomingPairRequest()
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ref.connect(android_address)
     bluetooth_utils.assert_wait_condition_true(
