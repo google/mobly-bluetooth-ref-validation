@@ -66,11 +66,13 @@ class SpatialAudioDisableTest(bt_base_test.BtRefBaseTest):
 
     # Enable Spatial Audio buttton state
     with bluetooth_utils.open_device_detail_settings(self.ad):
+      self.ad.log.info('Scroll to find Spatial Audio button.')
       self.ad.uia(scrollable=True).scroll.down(text=_SPATIAL_AUDIO_TITLE)
 
       if self.ad.uia(text=_SPATIAL_AUDIO_TITLE).wait.exists(
           _WAIT_FOR_UI_TRANSLATE
       ):
+        self.ad.log.info('Found Spatial Audio button.')
         spatial_audio_switch = self.ad.uia(text=_SPATIAL_AUDIO_TITLE).right(
             clazz='android.widget.Switch'
         )

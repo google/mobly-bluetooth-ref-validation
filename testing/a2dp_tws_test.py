@@ -15,7 +15,6 @@
 """Test A2DP media play on Android + Bluetooth reference device."""
 
 import datetime
-import logging
 import time
 
 from mobly import test_runner

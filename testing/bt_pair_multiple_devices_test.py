@@ -15,7 +15,6 @@
 """A Mobly Test to test basic Bluetooth pairing on reference device."""
 
 import datetime
-import logging
 import time
 
 from mobly import base_test
@@ -43,7 +42,7 @@ class BtPairMultipleTest(bt_base_test.BtRefBaseTest):
     super().setup_class()
 
     # Register an Android device controller.
-    self.ad_a, self.ad_b, *_ = self.register_controller(android_device, 2)
+    self.ad_a, self.ad_b, *_ = self.register_controller(module=android_device, min_number=2)
     utils.concurrent_exec(
         bluetooth_utils.setup_android_device,
         param_list=[[self.ad_a], [self.ad_b]],

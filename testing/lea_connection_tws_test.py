@@ -28,9 +28,8 @@ from testing.mobly.platforms.bluetooth import bluetooth_reference_device
 from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
-_LONG_DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=30)
-_WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=60)
 _WAIT_BLUETOOTH_STATE_CHANGE = datetime.timedelta(seconds=45)
+_WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
 
 
 class LEAConnectionTest(bt_base_test.BtRefBaseTest):
@@ -83,7 +82,9 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
 
   def test_lea_connect_disconnect(self) -> None:
     android_address = self.ad.mbs.btGetAddress()
-
+    #################################################################
+    # Trigger disconnection / reconnection from the android side.
+    #################################################################
     self.ad.log.info('Connect LE Audio device.')
     bluetooth_utils.assert_wait_condition_true(
         lambda: self.ad.bt.btIsLeAudioConnected(
@@ -95,7 +96,7 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
 
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ad.log.info('Disconnect LE Audio device.')
-    self.ad.bt.btLeAudioDisconnect(self.ref_primary.bluetooth_address)
+    self.ad.mbs.btLeAudioDisconnect(self.ref_primary.bluetooth_address)
     bluetooth_utils.assert_wait_condition_true(
         lambda: not self.ad.bt.btIsLeAudioConnected(
           self.ref_primary.bluetooth_address
@@ -104,7 +105,29 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
         'Fail to disconnect LE Audio device.'
     )
 
-    # Cause firmware can not to reconnected.
+    #################################################################
+    # Trigger disconnection / reconnection from the reference side.
+    #################################################################
+    # Disconnect the headset
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref_primary.disconnect(android_address)
+    bluetooth_utils.assert_wait_condition_true(
+        lambda: not self.ad.bt.btIsLeAudioConnected(
+          self.ref_primary.bluetooth_address
+        ),
+        _WAIT_BLUETOOTH_STATE_CHANGE,
+        'Fail to disconnect LE Audio device.'
+    )
+    # Reconnect the headset
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref_primary.connect(android_address)
+    bluetooth_utils.assert_wait_condition_true(
+        lambda: self.ad.bt.btIsLeAudioConnected(
+          self.ref_primary.bluetooth_address
+        ),
+        _WAIT_BLUETOOTH_STATE_CHANGE,
+        'Fail to connect LE Audio device.'
+    )
 
   def teardown_test(self) -> None:
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
