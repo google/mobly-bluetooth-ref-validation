@@ -42,7 +42,7 @@ class BtPairSinglePointTest(bt_base_test.BtRefBaseTest):
     self.ad_a, self.ad_b, *_ = self.register_controller(android_device, 2)
     utils.concurrent_exec(
         bluetooth_utils.setup_android_device,
-        param_list=[[self.ad_a], [self.ad_b]],
+        param_list=[[self.ad_a, enable_le_audio=False], [self.ad_b, enable_le_audio=False]],
         raise_on_exception=True,
     )
 
@@ -76,7 +76,6 @@ class BtPairSinglePointTest(bt_base_test.BtRefBaseTest):
 
     # Second device paired and connected. First device lost connection.
     bluetooth_utils.mbs_pair_devices(self.ad_b, ref_address)
-    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad_b, False)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     bluetooth_utils.assert_device_connected(
         self.ad_b,

@@ -75,8 +75,8 @@ def load_mbs_and_uiautomator(
       service_class=uiautomator.UiAutomatorService,
       configs=uiautomator.UiAutomatorConfigs(
           snippet=uiautomator.Snippet(
-              package_name=_MBS_UI_PACKAGE,
-              file_path=_MBS_UI_APK_PATH,
+              package_name=_BT_SNIPPET_PACKAGE,
+              file_path=_BT_SNIPPET_APK_PATH,
               ui_public_service_name=uiautomator_snippet_name,
               custom_service_name=mbs_snippet_name,
           )

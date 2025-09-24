@@ -42,7 +42,7 @@ class BtPairMultiPointTest(bt_base_test.BtRefBaseTest):
     self.ad_a, self.ad_b, *_ = self.register_controller(android_device, 2)
     utils.concurrent_exec(
         bluetooth_utils.setup_android_device,
-        param_list=[[self.ad_a], [self.ad_b]],
+        param_list=[[self.ad_a, enable_le_audio=False], [self.ad_b, enable_le_audio=False]],
         raise_on_exception=True,
     )
 
@@ -60,7 +60,6 @@ class BtPairMultiPointTest(bt_base_test.BtRefBaseTest):
 
     # First device paired and connected.
     bluetooth_utils.mbs_pair_devices(self.ad_a, ref_address)
-    # bluetooth_utils.set_le_audio_state_on_paired_device(self.ad_a, False)
     self.ad_a.mbs.btA2dpConnect(ref_address)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     bluetooth_utils.assert_device_connected(
