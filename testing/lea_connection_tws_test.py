@@ -87,7 +87,7 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     #################################################################
     self.ad.log.info('Connect LE Audio device.')
     bluetooth_utils.assert_wait_condition_true(
-        lambda: self.ad.bt.btIsLeAudioConnected(
+        lambda: self.ad.mbs.btIsLeAudioConnected(
           self.ref_primary.bluetooth_address
         ),
         _WAIT_BLUETOOTH_STATE_CHANGE,
@@ -98,7 +98,7 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     self.ad.log.info('Disconnect LE Audio device.')
     self.ad.mbs.btLeAudioDisconnect(self.ref_primary.bluetooth_address)
     bluetooth_utils.assert_wait_condition_true(
-        lambda: not self.ad.bt.btIsLeAudioConnected(
+        lambda: not self.ad.mbs.btIsLeAudioConnected(
           self.ref_primary.bluetooth_address
         ),
         _WAIT_BLUETOOTH_STATE_CHANGE,
@@ -112,7 +112,7 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ref_primary.disconnect(android_address)
     bluetooth_utils.assert_wait_condition_true(
-        lambda: not self.ad.bt.btIsLeAudioConnected(
+        lambda: not self.ad.mbs.btIsLeAudioConnected(
           self.ref_primary.bluetooth_address
         ),
         _WAIT_BLUETOOTH_STATE_CHANGE,
@@ -122,7 +122,7 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ref_primary.connect(android_address)
     bluetooth_utils.assert_wait_condition_true(
-        lambda: self.ad.bt.btIsLeAudioConnected(
+        lambda: self.ad.mbs.btIsLeAudioConnected(
           self.ref_primary.bluetooth_address
         ),
         _WAIT_BLUETOOTH_STATE_CHANGE,

@@ -61,9 +61,6 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
         raise_on_exception=True,
     )
     bluetooth_utils.mbs_pair_devices(self.ad, self.ref_primary.bluetooth_address)
-    bluetooth_utils.set_le_audio_state_on_paired_device(
-        self.ad, True, skip_if_no_button=True
-    )
 
   def test_1_set_tws_one_component(self) -> None:
     utils.concurrent_exec(

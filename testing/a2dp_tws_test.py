@@ -68,9 +68,6 @@ class MediaPlayTest(bt_base_test.BtRefBaseTest):
     self.ref_primary.set_component_number(2)
 
     bluetooth_utils.mbs_pair_devices(self.ad, self.ref_primary.bluetooth_address)
-    bluetooth_utils.set_le_audio_state_on_paired_device(
-        self.ad, False, skip_if_no_button=True
-    )
     self.ad.mbs.btA2dpConnect(self.ref_primary.bluetooth_address.upper())
 
   def test_media_play(self):

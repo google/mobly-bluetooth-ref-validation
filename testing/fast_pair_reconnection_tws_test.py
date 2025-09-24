@@ -73,7 +73,6 @@ class FastPairReconnectionTwsTest(bt_base_test.BtRefBaseTest):
     bluetooth_utils.fast_pair_android_and_ref(
         self.ad, self.ref_primary.bluetooth_address
     )
-    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, True)
 
   def test_connect_disconnect(self) -> None:
     android_address = self.ad.mbs.btGetAddress()

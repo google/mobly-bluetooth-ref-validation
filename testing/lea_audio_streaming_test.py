@@ -67,10 +67,10 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
     self.ad.adb.push([_MEDIA_FILE, _MEDIA_LOCAL_PATH])
 
     try:
-      self.ad.bt.media3StartLocalFile(_MEDIA_LOCAL_PATH)
+      self.ad.mbs.media3StartLocalFile(_MEDIA_LOCAL_PATH)
 
       bluetooth_utils.assert_wait_condition_true(
-          lambda: self.ad.bt.media3IsPlayerPlaying(),
+          lambda: self.ad.mbs.media3IsPlayerPlaying(),
           fail_message='Failed to start playing media.',
       )
       bluetooth_utils.assert_wait_condition_true(
@@ -79,7 +79,7 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
       )
     finally:
       # Stops video playing
-      self.ad.bt.media3Stop()
+      self.ad.mbs.media3Stop()
 
   def teardown_test(self):
     self.ad.services.create_output_excerpts_all(self.current_test_info)
