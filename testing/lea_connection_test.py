@@ -62,7 +62,6 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
         _WAIT_BLUETOOTH_STATE_CHANGE,
         'Fail to connect LE Audio device.'
     )
-    # bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, True)
 
   def test_lea_connect_disconnect(self) -> None:
     android_address = self.ad.mbs.btGetAddress()

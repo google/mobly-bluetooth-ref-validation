@@ -75,7 +75,6 @@ class BtPairMultiPointTest(bt_base_test.BtRefBaseTest):
 
     # Second device paired and connected. First device still connected.
     bluetooth_utils.mbs_pair_devices(self.ad_b, ref_address)
-    # bluetooth_utils.set_le_audio_state_on_paired_device(self.ad_b, False)
     self.ad_b.mbs.btA2dpConnect(ref_address)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     bluetooth_utils.assert_device_connected(

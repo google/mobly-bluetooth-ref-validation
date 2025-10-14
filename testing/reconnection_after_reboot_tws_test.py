@@ -44,7 +44,7 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad, enable_le_audio=False)
 
     # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
@@ -68,7 +68,6 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     bluetooth_utils.mbs_pair_devices(
         self.ad, self.ref_primary.bluetooth_address
     )
-    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, True)
 
   def test_reconnection_after_reboot(self) -> None:
     self.ad.reboot()

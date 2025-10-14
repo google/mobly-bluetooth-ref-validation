@@ -75,10 +75,6 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
     self.ref_primary.set_on_head_state(True)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
-    # Enable LE Audio on Android
-    self.ad.log.info('Enabling LE Audio...')
-    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, True)
-    self.ad.log.info('LE Audio enabled.')
     self.lea_enabled = True
 
   def test_2_media_control(self):
