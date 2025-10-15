@@ -110,7 +110,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
       )
 
       initial_volume = self.ad.mbs.getMusicVolume()
-      self.ref_primary.volume_up()
+      self.ref_primary.volume_up(10)
       bluetooth_utils.assert_wait_condition_true(
           lambda: self.ad.mbs.getMusicVolume() > initial_volume,
           fail_message='Failed to increase media volume.',
@@ -118,7 +118,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
 
       time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
       initial_volume = self.ad.mbs.getMusicVolume()
-      self.ref_primary.volume_down()
+      self.ref_primary.volume_down(10)
       bluetooth_utils.assert_wait_condition_true(
           lambda: self.ad.mbs.getMusicVolume() < initial_volume,
           fail_message='Failed to decrease media volume.',
