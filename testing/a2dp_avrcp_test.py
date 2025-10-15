@@ -43,7 +43,7 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad, enable_le_audio=False)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]
@@ -55,9 +55,6 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
     self.ref.start_pairing_mode()
 
     bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
-    bluetooth_utils.set_le_audio_state_on_paired_device(
-        self.ad, False, skip_if_no_button=True
-    )
     self.ad.mbs.btA2dpConnect(self.ref.bluetooth_address.upper())
 
   def test_media_play_and_control(self):
@@ -67,10 +64,10 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
     # We can't use Mobly snippet to play audio here because the audio played by
     # MBS cannot be paused from the headset.
     try:
-      self.ad.bt.media3StartLocalFile(_MEDIA_LOCAL_PATH)
+      self.ad.mbs.media3StartLocalFile(_MEDIA_LOCAL_PATH)
 
       bluetooth_utils.assert_wait_condition_true(
-          lambda: self.ad.bt.media3IsPlayerPlaying(),
+          lambda: self.ad.mbs.media3IsPlayerPlaying(),
           fail_message='Failed to start playing media.',
       )
       bluetooth_utils.assert_wait_condition_true(
@@ -135,7 +132,7 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
       self.ref.media_prev()
       time.sleep(_MEDIA_PLAY_DURATION.total_seconds())
     finally:
-      self.ad.bt.media3Stop()
+      self.ad.mbs.media3Stop()
 
   def teardown_test(self):
     bluetooth_utils.clear_bonded_devices(self.ad)

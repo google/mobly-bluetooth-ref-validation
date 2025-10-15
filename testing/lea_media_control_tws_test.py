@@ -75,10 +75,6 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
     self.ref_primary.set_on_head_state(True)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
-    # Enable LE Audio on Android
-    self.ad.log.info('Enabling LE Audio...')
-    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, True)
-    self.ad.log.info('LE Audio enabled.')
     self.lea_enabled = True
 
   def test_2_media_control(self):
@@ -93,10 +89,10 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
     try:
       ref_address = self.ref_primary.bluetooth_address.upper()
       self.ad.adb.push([_MEDIA_FILE, _MEDIA_LOCAL_PATH])
-      self.ad.bt.media3StartLocalFile(_MEDIA_LOCAL_PATH)
+      self.ad.mbs.media3StartLocalFile(_MEDIA_LOCAL_PATH)
 
       bluetooth_utils.assert_wait_condition_true(
-          lambda: self.ad.bt.media3IsPlayerPlaying(),
+          lambda: self.ad.mbs.media3IsPlayerPlaying(),
           fail_message='Failed to start playing media.',
       )
       bluetooth_utils.assert_wait_condition_true(
@@ -133,13 +129,13 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
       #################################################################
       self.ref_primary.media_pause()
       bluetooth_utils.assert_wait_condition_true(
-          lambda: not self.ad.bt.media3IsPlayerPlaying(),
+          lambda: not self.ad.mbs.media3IsPlayerPlaying(),
           fail_message='Failed to pause media.',
       )
 
       self.ref_primary.media_play()
       bluetooth_utils.assert_wait_condition_true(
-          lambda: self.ad.bt.media3IsPlayerPlaying(),
+          lambda: self.ad.mbs.media3IsPlayerPlaying(),
           fail_message='Failed to pause media.',
       )
       bluetooth_utils.assert_wait_condition_true(
@@ -158,7 +154,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
       time.sleep(_MEDIA_PLAY_DURATION.total_seconds())
     finally:
       # Stops video playing
-      self.ad.bt.media3Stop()
+      self.ad.mbs.media3Stop()
 
     self.ad.log.info('Finished media streaming.')
 

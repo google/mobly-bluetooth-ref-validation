@@ -56,13 +56,12 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     bluetooth_utils.mbs_pair_devices(self.ad, self.ref.bluetooth_address)
     self.ad.mbs.btLeAudioConnect(self.ref.bluetooth_address)
     bluetooth_utils.assert_wait_condition_true(
-        lambda: self.ad.bt.btIsLeAudioConnected(
+        lambda: self.ad.mbs.btIsLeAudioConnected(
           self.ref.bluetooth_address
         ),
         _WAIT_BLUETOOTH_STATE_CHANGE,
         'Fail to connect LE Audio device.'
     )
-    # bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, True)
 
   def test_lea_connect_disconnect(self) -> None:
     android_address = self.ad.mbs.btGetAddress()
@@ -73,7 +72,7 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     self.ad.log.info('Disconnect LE Audio device.')
     self.ad.mbs.btLeAudioDisconnect(self.ref.bluetooth_address)
     bluetooth_utils.assert_wait_condition_true(
-        lambda: not self.ad.bt.btIsLeAudioConnected(
+        lambda: not self.ad.mbs.btIsLeAudioConnected(
           self.ref.bluetooth_address
         ),
         _WAIT_BLUETOOTH_STATE_CHANGE,
@@ -84,7 +83,7 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     self.ad.log.info('Connect LE Audio device.')
     self.ad.mbs.btLeAudioConnect(self.ref.bluetooth_address)
     bluetooth_utils.assert_wait_condition_true(
-        lambda: self.ad.bt.btIsLeAudioConnected(
+        lambda: self.ad.mbs.btIsLeAudioConnected(
           self.ref.bluetooth_address
         ),
         _WAIT_BLUETOOTH_STATE_CHANGE,
@@ -98,7 +97,7 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ref.disconnect(android_address)
     bluetooth_utils.assert_wait_condition_true(
-        lambda: not self.ad.bt.btIsLeAudioConnected(
+        lambda: not self.ad.mbs.btIsLeAudioConnected(
           self.ref.bluetooth_address
         ),
         _WAIT_BLUETOOTH_STATE_CHANGE,
@@ -109,7 +108,7 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ref.connect(android_address)
     bluetooth_utils.assert_wait_condition_true(
-        lambda: self.ad.bt.btIsLeAudioConnected(
+        lambda: self.ad.mbs.btIsLeAudioConnected(
           self.ref.bluetooth_address
         ),
         _WAIT_BLUETOOTH_STATE_CHANGE,

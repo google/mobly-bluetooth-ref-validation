@@ -29,23 +29,6 @@ _BT_SNIPPET_PACKAGE = 'com.google.snippet.bluetooth'
 
 _DELAY_AFTER_CHANGE_BT_STATUS = datetime.timedelta(seconds=3)
 
-
-def load_bluetooth_snippet(
-    ad: android_device.AndroidDevice,
-    mbs_snippet_name: str = 'bt',
-) -> None:
-  """Install bluetooth snippet to DUT.
-
-  Args:
-    ad: The android device that needs to load snippet service.
-    uiautomator_snippet_name: The attribute name attached the Snippet
-      UiAutomator.
-    mbs_snippet_name: The attribute name attached the BT snippet client.
-  """
-
-  ad.adb.install(_BT_SNIPPET_APK_PATH)
-  ad.load_snippet('bt', _BT_SNIPPET_PACKAGE)
-
 def load_mbs_and_uiautomator(
     ad: android_device.AndroidDevice,
     uiautomator_snippet_name: str = 'ui',
@@ -75,8 +58,8 @@ def load_mbs_and_uiautomator(
       service_class=uiautomator.UiAutomatorService,
       configs=uiautomator.UiAutomatorConfigs(
           snippet=uiautomator.Snippet(
-              package_name=_MBS_UI_PACKAGE,
-              file_path=_MBS_UI_APK_PATH,
+              package_name=_BT_SNIPPET_PACKAGE,
+              file_path=_BT_SNIPPET_APK_PATH,
               ui_public_service_name=uiautomator_snippet_name,
               custom_service_name=mbs_snippet_name,
           )

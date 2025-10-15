@@ -68,7 +68,6 @@ class LEAPowerOnOffTwsTest(bt_base_test.BtRefBaseTest):
     bluetooth_utils.mbs_pair_devices(
         self.ad, self.ref_primary.bluetooth_address
     )
-    bluetooth_utils.set_le_audio_state_on_paired_device(self.ad, True)
 
   def test_lea_connect_disconnect(self) -> None:
     android_address = self.ad.mbs.btGetAddress()
