@@ -32,7 +32,7 @@ _LONG_DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=20)
 _WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
 
 
-class LEAConnectionTest(bt_base_test.BtRefBaseTest):
+class LEAReconnectionTest(bt_base_test.BtRefBaseTest):
   """A Mobly Test to test basic Bluetooth connection on Android + BT ref."""
 
   ad: android_device.AndroidDevice
@@ -73,12 +73,13 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     self.ad.reboot()
     time.sleep(_LONG_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
-    with bluetooth_utils.open_device_detail_settings(self.ad):
-      # Confirm the devices are connected.
-      asserts.assert_true(
-          self.ad.uia(text='Active').wait.exists(_WAIT_FOR_UI_UPDATE),
-          'Fail to confirm devices are connected after Android reboot.'
-      )
+    bluetooth_utils.assert_device_connected(
+        self.ad,
+        self.ref_primary.bluetooth_address,
+        fail_message=(
+            'Fail to confirm devices are connected after Android reboot'
+        ),
+    )
 
   def teardown_test(self) -> None:
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())

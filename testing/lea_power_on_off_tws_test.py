@@ -72,40 +72,39 @@ class LEAPowerOnOffTwsTest(bt_base_test.BtRefBaseTest):
   def test_lea_connect_disconnect(self) -> None:
     android_address = self.ad.mbs.btGetAddress()
 
-    with bluetooth_utils.open_device_detail_settings(self.ad):
-      # Confirm the devices are connected.
-      asserts.assert_true(
-          self.ad.uia(text='Active').wait.exists(_WAIT_FOR_UI_UPDATE),
-          '[Initial] Fail to confirm devices are connected.'
-      )
+    # Confirm the devices are connected.
+    bluetooth_utils.assert_wait_condition_true(
+        lambda: self.ad.mbs.btIsLeAudioConnected(
+          self.ref_primary.bluetooth_address
+        ),
+        _WAIT_BLUETOOTH_STATE_CHANGE,
+        '[Initial] Fail to confirm LE Audio device connected.'
+    )
 
-      #################################################################
-      # Trigger disconnection / reconnection from the reference side.
-      #################################################################
-      time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-      self.ref_primary.close_box()
-      self.ref_secondary.close_box()
+    #################################################################
+    # Trigger disconnection / reconnection from the reference side.
+    #################################################################
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref_primary.close_box()
+    self.ref_secondary.close_box()
+    bluetooth_utils.assert_wait_condition_true(
+        lambda: not self.ad.mbs.btIsLeAudioConnected(
+          self.ref_primary.bluetooth_address
+        ),
+        _WAIT_BLUETOOTH_STATE_CHANGE,
+        'Fail to disconnect LE Audio device after powering off BT ref.'
+    )
 
-      def is_disconnected() -> bool:
-        button = self.ad.uia(text='Connect')
-        return button.exists and button.enabled
-
-      bluetooth_utils.assert_wait_condition_true(
-          is_disconnected,
-          _WAIT_FOR_UI_UPDATE,
-          '[Disconnection test] Fail to disconnect from the Bluetooth'
-          ' reference device.'
-      )
-
-      # Reconnect the headset
-      time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-      self.ref_primary.open_box()
-      self.ref_secondary.open_box()
-      asserts.assert_true(
-          self.ad.uia(text='Active').wait.exists(_WAIT_FOR_UI_UPDATE),
-          '[Reconnection test] Fail to reconnect from the Bluetooth'
-          ' reference device.'
-      )
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref_primary.open_box()
+    self.ref_secondary.open_box()
+    bluetooth_utils.assert_wait_condition_true(
+        lambda: self.ad.mbs.btIsLeAudioConnected(
+          self.ref_primary.bluetooth_address
+        ),
+        _WAIT_BLUETOOTH_STATE_CHANGE,
+        'Fail to reconnect LE Audio device after powering on BT ref.'
+    )
 
   def teardown_test(self) -> None:
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())

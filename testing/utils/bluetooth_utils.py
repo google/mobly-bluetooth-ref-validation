@@ -249,13 +249,13 @@ def mbs_pair_devices(ad: android_device.AndroidDevice, address: str) -> None:
   initial_name = assert_device_discovered(ad, address)
   logging.info(f'Discovered target device, name: {initial_name}')
 
-  # Disable FastPair halfsheet
-  while ad.uia(res=_FAST_PAIR_HALFSHEET_IMAGE_ID).wait.exists(
-      _WAIT_FOR_FP_HALFSHEET
-  ):
-    logging.info('Found FP halfsheet, pressed.')
-    ad.uia.press.back()
-    time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
+  # # Disable FastPair halfsheet
+  # while ad.uia(res=_FAST_PAIR_HALFSHEET_IMAGE_ID).wait.exists(
+  #     _WAIT_FOR_FP_HALFSHEET
+  # ):
+  #   logging.info('Found FP halfsheet, pressed.')
+  #   ad.uia.press.back()
+  #   time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
 
   mbs_pair_with_retry(ad, address)
   logging.info('Devices paired.')
@@ -266,8 +266,8 @@ def mbs_pair_devices(ad: android_device.AndroidDevice, address: str) -> None:
 def assert_wait_condition_true(
     func: Callable[[], bool],
     timeout: datetime.timedelta = _BLUETOOTH_OPERATION_TIME,
-    assert_if_failed: bool = True,
     fail_message: str = _CONDITION_NOT_TRUE_MSG,
+    assert_if_failed: bool = True,
 ) -> None:
   """Asserts if the target function returns true in given timeout."""
   deadline = time.perf_counter() + timeout.total_seconds()

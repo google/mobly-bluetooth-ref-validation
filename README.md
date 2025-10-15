@@ -223,3 +223,40 @@ Now you are able to run the example Mobly tests.
 
 1.  Ensure the test result of the above three test suites are all passed with
     0 error, 0 failed, and 0 skipped.
+
+### Run Specific Test Cases / Classes
+
+Running the whole test suite could be time consuming. For debugging purposes,
+you can run a sigle test case / class or a subset of the test suite by adding
+`--tests` flag.
+
++   To run a specific test case, add `--tests ClassA.test_a` to the execution
+    command. For example:
+
+    ```bash
+    python3 one_android_one_ref_suite.py -c config/OneAndroidOneRefTestbed.yaml --tests LEAConnectionTest.test_lea_connect_disconnect
+    ```
+
+    This will run `test_lea_connect_disconnect` of class `LEAConnectionTest`
+    sololy.
+
++   To run all tests in a specific test class, add `--tests ClassA` to the
+    execution command. For example:
+
+    ```bash
+    python3 one_android_one_ref_suite.py -c config/OneAndroidOneRefTestbed.yaml --tests LEAudioTest
+    ```
+
+    This will run all the test cases of class `LEAudioTest`, including 
+    `test_1_pair_ref_and_enable_le_audio` and `test_2_audio_streaming`.
+
++   To run more than one specfic test cases or test classes, add
+    `--tests ClassA[.test_a] ClassB[_test_suffix][.test_b] ...` to the
+    execution command. For example:
+
+    ```bash
+    python3 one_android_one_ref_suite.py -c config/OneAndroidOneRefTestbed.yaml --tests LEAConnectionTest.test_lea_connect_disconnect LEAudioTest
+    ```
+
+    This will run `LEAConnectionTest.test_lea_connect_disconnect` and all the
+    test cases of `LEAudioTest` sequentially.
