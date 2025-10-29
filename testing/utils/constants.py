@@ -14,5 +14,5 @@
 
 """Constants for running the BT ref test suite."""
 
-VERSION = '250822'
+VERSION = '251029'
 SUITE_NAME = 'Bluetooth EVB validation'

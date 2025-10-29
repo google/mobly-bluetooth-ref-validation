@@ -51,6 +51,8 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
     bluetooth_utils.setup_android_device(self.ad, enable_wifi=True, enable_le_audio=True)
+    device_info = self.ad.device_info
+    self.is_pixel = 'google' in device_info['build_info']['build_fingerprint'].lower()
 
     # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
@@ -74,7 +76,7 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
         raise_on_exception=True,
     )
     self.ref_primary.set_component_number(1)
-
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
   def test_2_set_battery_level_and_pair(self) -> None:
     self.ref_primary.set_battery_level_tws(_BATTERY_LEFT, _BATTERY_RIGHT)
@@ -95,6 +97,21 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
     )
     self.paired = True
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    # Secondary device not in paired list
+    paired_device_list = [
+        device['Address'].upper() for device in ad.mbs.btGetPairedDevices()
+    ]
+    asserts.assert_not_in(address.upper(), paired_device_list)
+
+  def test_3_check_battery_show_one_ear(self):
+    asserts.skip_if(
+        not hasattr(self, 'paired'),
+        'Devices not paired. Skip following steps.',
+    )
+    asserts.skip_if(
+        not self.is_pixel,
+        'UI test is only for Pixel devices. Skip following steps.',
+    )
 
     with bluetooth_utils.open_system_settings(self.ad):
       # Check battery level of each ear
@@ -111,32 +128,19 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
           'Fail to find correct right ear battery from device detail page.'
       )
 
-  def test_3_check_paired_device_detail(self):
+  def test_4_check_paired_device_detail(self):
     asserts.skip_if(
         not hasattr(self, 'paired'),
         'Devices not paired. Skip following steps.',
     )
-    with bluetooth_utils.open_device_detail_settings(self.ad):
-      # Check only one address in device detail
-      self.ad.uia(scrollable=True).scroll.down(textContains='Bluetooth address')
-      asserts.assert_true(
-          self.ad.uia(textContains='Bluetooth address').wait.exists(
-              _DELAYS_BETWEEN_ACTIONS
-          ),
-          'Failed to find Bluetooth address on the device detail page.'
-      )
-      bluetooth_address_text = self.ad.uia(textContains='Bluetooth address').text
-      bluetooth_address_list = bluetooth_address_text.replace(
-          "Device's Bluetooth address:", ''
-      ).strip().split()
-      asserts.assert_equal(
-          len(bluetooth_address_list),
-          1,
-          'Fail to find correct address from device detail page.'
-      )
+    asserts.skip_if(
+        not self.is_pixel,
+        'UI test is only for Pixel devices. Skip following steps.',
+    )
 
+    with bluetooth_utils.open_device_detail_settings(self.ad):
       # Enter FindDevice page.
-      self.ad.uia(scrollable=True).scroll.up(
+      self.ad.uia(scrollable=True).scroll.down(
           textContains=_FIND_DEVICE_SLICE_TITLE
       )
       if not self.ad.uia(

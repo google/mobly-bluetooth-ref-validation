@@ -132,7 +132,7 @@ def is_wifi_enabled(ad: android_device.AndroidDevice) -> bool:
 def wifi_enable(ad: android_device.AndroidDevice) -> None:
   """Enables Wi-Fi."""
   if is_wifi_enabled(ad):
-    ad.log.info('Wi-Fi was already enabled.')
+    ad.log.info('Wi-Fi is already enabled.')
     return
   ad.log.info('Enabling Wi-Fi...')
   ad.adb.shell(['cmd', 'wifi', 'set-wifi-enabled', 'enabled'])

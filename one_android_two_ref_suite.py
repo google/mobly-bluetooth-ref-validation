@@ -20,6 +20,7 @@ from testing import a2dp_avrcp_tws_test
 from testing import a2dp_tws_test
 from testing import bt_pair_tws_test
 from testing import fast_pair_anc_tws_test
+from testing import fast_pair_battery_level_tws_test
 from testing import fast_pair_initial_pair_tws_test
 from testing import fast_pair_reconnection_tws_test
 from testing import fast_pair_ring_device_tws_test
@@ -37,15 +38,16 @@ if __name__ == '__main__':
       bt_pair_tws_test.BtPairTwsTest,
       a2dp_tws_test.MediaPlayTest,
       a2dp_avrcp_tws_test.MediaControlTest,
-      tws_one_component_battery_level_test.TwsOneComponentTest,
-      tws_two_components_battery_level_test.TwsTwoComponentsTest,
       power_on_off_tws_test.PowerOnOffTwsTest,
       lea_connection_tws_test.LEAConnectionTest,
       lea_power_on_off_tws_test.LEAPowerOnOffTwsTest,
       lea_audio_streaming_tws_test.LEAudioTest,
       lea_media_control_tws_test.LEAudioControlTest,
+      tws_one_component_battery_level_test.TwsOneComponentTest,
+      tws_two_components_battery_level_test.TwsTwoComponentsTest,
       fast_pair_initial_pair_tws_test.FastPairInitialPairTwsTest,
       fast_pair_anc_tws_test.FastPairAncTwsTest,
       fast_pair_ring_device_tws_test.FastPairRingDeviceTest,
       fast_pair_reconnection_tws_test.FastPairReconnectionTwsTest,
+      fast_pair_battery_level_tws_test.FastPairSetBatteryTwsTest,
   ])
