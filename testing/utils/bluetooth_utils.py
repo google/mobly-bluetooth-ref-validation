@@ -102,7 +102,7 @@ def clear_bonded_devices(ad: android_device.AndroidDevice) -> None:
     ad.mbs.btUnpairDevice(device['Address'])
     # By testing multiple times,
     # the test results show that this delay improves stability.
-    time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
+    time.sleep(_WAIT_FOR_UI_TRANSLATE.total_seconds())
 
 
 def set_bluetooth_le_audio(

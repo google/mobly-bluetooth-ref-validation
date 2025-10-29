@@ -56,8 +56,8 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
     self.ref_primary, self.ref_secondary = bluetooth_utils.get_tws_device(refs)
     utils.concurrent_exec(
-        lambda d: d.factory_reset(),
-        [[self.ref_primary], [self.ref_secondary]],
+        lambda d, wait_access: d.factory_reset(wait_access),
+        [[self.ref_primary, True], [self.ref_secondary, False]],
         raise_on_exception=True,
     )
     bluetooth_utils.mbs_pair_devices(self.ad, self.ref_primary.bluetooth_address)

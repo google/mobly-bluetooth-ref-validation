@@ -316,18 +316,18 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
     self._start_serial_connection()
     self._generate_output_filename()
     # Initializes Bluetooth address of the board.
-    try:
-      self._set_bt_address_to_configured_address()
-    except (BesCommandError, CommandTimeoutError):
-      self.log.exception(
-          'Failed to set Bluetooth address to configured address. Retrying.'
-      )
-      # Retry once if the command fails. If the USB connection is not stable,
-      # or the board is not in good state, there might be some junk data in
-      # UART input buffer of the board, causing the board to fail to recognize
-      # the target command. A retry helps in this case.
-      time.sleep(_BES_EXECUTION_TIMEOUT.total_seconds())
-      self._set_bt_address_to_configured_address()
+    # try:
+    #   self._set_bt_address_to_configured_address()
+    # except (BesCommandError, CommandTimeoutError):
+    #   self.log.exception(
+    #       'Failed to set Bluetooth address to configured address. Retrying.'
+    #   )
+    #   # Retry once if the command fails. If the USB connection is not stable,
+    #   # or the board is not in good state, there might be some junk data in
+    #   # UART input buffer of the board, causing the board to fail to recognize
+    #   # the target command. A retry helps in this case.
+    #   time.sleep(_BES_EXECUTION_TIMEOUT.total_seconds())
+    #   self._set_bt_address_to_configured_address()
 
   @property
   def debug_tag(self) -> str:
@@ -625,6 +625,15 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
     )
     time.sleep(3)
     self.reboot()
+
+  def set_peer_address(
+      self, primary_address: str, secondary_address: str
+  ) -> None:
+    """Sets the peer Bluetooth address of the device."""
+    self._send_bes_command(
+        f'{constants.BESCommand.SET_TWS_ADDRESS} {primary_address}'
+        f' {secondary_address}'
+    )
 
   def set_name(self, bluetooth_name: str, ble_name: str) -> None:
     """Sets the classic Bluetooth name and BLE name of the device.

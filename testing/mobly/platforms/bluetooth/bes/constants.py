@@ -39,6 +39,7 @@ class BESCommand(enum.Enum):
   SET_TWS_ENABLE = 'set_link_tws'
   SET_COMPONENT_NUMBER = 'set_lea_csip'
   GET_COMPONENT_NUMBER = 'get_lea_csip'
+  SET_TWS_ADDRESS = 'set_tws_address'
   TWS_PAIRING = 'tws_pairing'
   GET_BOX_STATE = 'get_box_state'
   OPEN_BOX = 'open_box'

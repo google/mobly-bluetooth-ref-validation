@@ -57,8 +57,8 @@ class FastPairReconnectionTwsTest(bt_base_test.BtRefBaseTest):
 
   def setup_test(self) -> None:
     utils.concurrent_exec(
-        lambda d: d.factory_reset(),
-        [[self.ref_primary], [self.ref_secondary]],
+        lambda d, wait_access: d.factory_reset(wait_access),
+        [[self.ref_primary, True], [self.ref_secondary, False]],
         raise_on_exception=True,
     )
     utils.concurrent_exec(
