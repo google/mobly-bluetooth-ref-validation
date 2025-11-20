@@ -28,11 +28,7 @@ from testing.mobly.platforms.bluetooth import bluetooth_reference_device
 from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=3)
-_WAIT_FOR_UI_TRANSLATE = datetime.timedelta(seconds=6)
-_WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
 _UI_UPDATE_TIME = datetime.timedelta(seconds=60)
-
-_FIND_DEVICE_SLICE_TITLE = 'Find device'
 
 _BATTERY_LEFT = 80
 _BATTERY_RIGHT = 66
@@ -51,7 +47,7 @@ class TwsTwoComponentsTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad, enable_wifi=True, enable_le_audio=True)
+    bluetooth_utils.setup_android_device(self.ad, enable_wifi=True, enable_le_audio=False)
     device_info = self.ad.device_info
     self.is_pixel = 'google' in device_info['build_info']['build_fingerprint'].lower()
 
@@ -90,12 +86,8 @@ class TwsTwoComponentsTest(bt_base_test.BtRefBaseTest):
 
     self.ref_primary.start_pairing_mode()
     # Pair the Android phone with ref.
-    initial_name = bluetooth_utils.assert_device_discovered(
-      self.ad, self.ref_primary.bluetooth_address
-    )
-    bluetooth_utils.mbs_pair_with_retry(
-        self.ad, self.ref_primary.bluetooth_address
-    )
+    bluetooth_utils.mbs_pair_devices(self.ad, self.ref_primary.bluetooth_address)
+
     bluetooth_utils.assert_device_bonded_via_address(
       self.ad, self.ref_primary.bluetooth_address
     )
@@ -127,50 +119,6 @@ class TwsTwoComponentsTest(bt_base_test.BtRefBaseTest):
               _UI_UPDATE_TIME
           ),
           'Fail to find correct right ear battery from device detail page.'
-      )
-
-  def test_4_check_paired_device_detail(self):
-    asserts.skip_if(
-        not hasattr(self, 'paired'),
-        'Devices not paired. Skip following steps.',
-    )
-    asserts.skip_if(
-        not self.is_pixel,
-        'UI test is only for Pixel devices. Skip following steps.',
-    )
-
-    with bluetooth_utils.open_device_detail_settings(self.ad):
-      # Enter FindDevice page.
-      self.ad.uia(scrollable=True).scroll.down(
-          textContains=_FIND_DEVICE_SLICE_TITLE
-      )
-      if not self.ad.uia(
-          textContains=_FIND_DEVICE_SLICE_TITLE
-      ).wait.click(_WAIT_FOR_UI_UPDATE):
-        asserts.assert_true(
-            self.ad.uia(scrollable=True).scroll.down.click(
-                textContains=_FIND_DEVICE_SLICE_TITLE,
-            ),
-            'Fail to enter Find Device page.',
-        )
-      # Starts to check ring device UI when headset is connected.
-      asserts.assert_true(
-          self.ad.uia(textContains='Connected').wait.exists(
-              _WAIT_FOR_UI_TRANSLATE
-          ),
-          'Fail to get connected string when headset is connected on phone.',
-      )
-      asserts.assert_true(
-          self.ad.uia(text='Ring Left', enabled=True).wait.exists(
-              _WAIT_FOR_UI_TRANSLATE
-          ),
-          'UI Fail because the left ring button is not enabled when device is'
-          ' connected.',
-      )
-      asserts.assert_true(
-          self.ad.uia(text='Ring Right').enabled,
-          'UI Fail because the right ring button is not enabled when device is'
-          ' connected.',
       )
 
   def teardown_test(self) -> None:

@@ -72,12 +72,15 @@ class FastPairSetBatteryTwsTest(bt_base_test.BtRefBaseTest):
     self.ref_primary.set_battery_level_tws(
         _BATTERY_LEFT, _BATTERY_RIGHT, _BATTERY_CASE
     )
-    (battery_left, battery_right, battery_case) = (
-        self.ref_primary.get_battery_level_tws()
-    )
-    asserts.assert_equal(battery_left, _BATTERY_LEFT)
-    asserts.assert_equal(battery_right, _BATTERY_RIGHT)
-    asserts.assert_equal(battery_case, _BATTERY_CASE)
+
+    # battery_level is updated show on phone But cannot be read back from 
+    # bluetooth ref device
+    # (battery_left, battery_right, battery_case) = (
+    #     self.ref_primary.get_battery_level_tws()
+    # )
+    # asserts.assert_equal(battery_left, _BATTERY_LEFT)
+    # asserts.assert_equal(battery_right, _BATTERY_RIGHT)
+    # asserts.assert_equal(battery_case, _BATTERY_CASE)
 
     with self.ad.services.logcat_pubsub.event(
         pattern=_BATTERY_LEVEL_PATTERN,
@@ -123,12 +126,15 @@ class FastPairSetBatteryTwsTest(bt_base_test.BtRefBaseTest):
     self.ref_primary.set_battery_level_tws(
         _BATTERY_LEFT_LOW, _BATTERY_RIGHT_LOW, _BATTERY_CASE_LOW
     )
-    (battery_left, battery_right, battery_case) = (
-        self.ref_primary.get_battery_level_tws()
-    )
-    asserts.assert_equal(battery_left, _BATTERY_LEFT_LOW)
-    asserts.assert_equal(battery_right, _BATTERY_RIGHT_LOW)
-    asserts.assert_equal(battery_case, _BATTERY_CASE_LOW)
+
+    # battery_level is updated show on phone But cannot be read back from 
+    # bluetooth ref device
+    # (battery_left, battery_right, battery_case) = (
+    #     self.ref_primary.get_battery_level_tws()
+    # )
+    # asserts.assert_equal(battery_left, _BATTERY_LEFT_LOW)
+    # asserts.assert_equal(battery_right, _BATTERY_RIGHT_LOW)
+    # asserts.assert_equal(battery_case, _BATTERY_CASE_LOW)
 
     with bluetooth_utils.open_device_detail_settings(self.ad):
       asserts.assert_true(
