@@ -120,6 +120,18 @@ class FastPairRingDeviceTest(bt_base_test.BtRefBaseTest):
       # Starts to check ring device UI when headset is disconnected.
       self.ref_primary.disconnect(self.ad.mbs.btGetAddress())
       time.sleep(_WAIT_FOR_UI_UPDATE.total_seconds())
+    
+    with bluetooth_utils.open_device_detail_settings(self.ad):
+      logging.info('Enter FindDevice page')
+      if not self.ad.uia(
+          textContains=_FIND_DEVICE_SLICE_TITLE
+      ).wait.click(_WAIT_FOR_UI_UPDATE):
+        asserts.assert_true(
+            self.ad.uia(scrollable=True).scroll.down.click(
+                textContains=_FIND_DEVICE_SLICE_TITLE,
+            ),
+            'Fail to enter Find Device page.',
+        )
 
       logging.info('Start to check Disconnected string')
       asserts.assert_true(

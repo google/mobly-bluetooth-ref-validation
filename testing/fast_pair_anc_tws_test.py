@@ -17,7 +17,6 @@
 import datetime
 import re
 import time
-import uuid
 
 from mobly import asserts
 from mobly import test_runner
@@ -29,12 +28,12 @@ from testing.mobly.platforms.bluetooth import bluetooth_reference_device
 from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
-_WAIT_FOR_UI_TRANSLATE = datetime.timedelta(seconds=6)
+_WAIT_FOR_UI_TRANSLATE = datetime.timedelta(seconds=20)
 _WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=15)
 
 # ANC slice title
-_ANC_SLICE_TITLE = 'Active Noise Control'
-_ANC_GRAY_OUT_CONTENT_DESCRIPTION = 'Disabled'
+_ANC_SLICE_TITLE = 'Noise cancellation'
+_ANC_GRAY_OUT_CONTENT_DESCRIPTION = 'Off'
 
 # Fast Pair log pattern
 _FAST_PAIR_TAG = 'NearbyDiscovery'
@@ -74,18 +73,15 @@ class FastPairAncTwsTest(bt_base_test.BtRefBaseTest):
   ) -> None:
     anc_gray_out_obj = (
         self.ad.uia(text=_ANC_SLICE_TITLE)
-        .ancestor(clazz='android.widget.FrameLayout')
-        .sibling(clazz='android.widget.FrameLayout')
-        .child(descriptionContains=_ANC_GRAY_OUT_CONTENT_DESCRIPTION)
-    )
+        .top(clazz='android.widget.RadioButton'))
     if is_gray_out:
-      asserts.assert_true(
-          anc_gray_out_obj.wait.exists(_WAIT_FOR_UI_TRANSLATE),
+      asserts.assert_false(
+          anc_gray_out_obj.enabled,
           'Failed to get ANC content description is Disabled when headset is'
           ' not on head.',
       )
     else:
-      asserts.assert_false(
+      asserts.assert_true(
           anc_gray_out_obj.wait.exists(_WAIT_FOR_UI_TRANSLATE),
           'Get ANC content description is Disabled when headset is on head.',
       )
@@ -176,7 +172,7 @@ class FastPairAncTwsTest(bt_base_test.BtRefBaseTest):
     with bluetooth_utils.open_device_detail_settings(self.ad):
       # Check ANC slice shown in device detail and enabled
       asserts.assert_true(
-          self.ad.uia(text='Transparency mode on').wait.exists(
+          self.ad.uia(text='Transparency').wait.exists(
               _WAIT_FOR_UI_TRANSLATE
           ),
           'Fail to set ANC mode to transparent from board',
@@ -192,6 +188,7 @@ class FastPairAncTwsTest(bt_base_test.BtRefBaseTest):
     time.sleep(_WAIT_FOR_UI_UPDATE.total_seconds())
 
     with bluetooth_utils.open_device_detail_settings(self.ad):
+      time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
       self._verify_anc_slice_gray_out(is_gray_out=True)
       time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 

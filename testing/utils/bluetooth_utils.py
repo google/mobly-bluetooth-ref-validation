@@ -218,6 +218,9 @@ def setup_android_device(
 
   clear_bonded_devices(ad)
 
+  # Make sure the screen is awake
+  ensure_screen_weak_up(ad)
+
   # Start logcat pubsub service
   ad.services.register(
       'logcat_pubsub', logcat_pubsub_service.LogcatPublisherService
@@ -292,6 +295,9 @@ def assert_device_discovered(
   deadline = time.perf_counter() + timeout.total_seconds()
   while time.perf_counter() <= deadline:
     device_list = ad.mbs.btDiscoverAndGetResults()
+    logging.debug(
+        '[assert_device_discovered] Discovered device list: %s',
+        device_list)
     for device in device_list:
       if device['Address'].upper() == address.upper():
         return device['Name']
@@ -644,3 +650,12 @@ def is_media_route_on_lea(
 ) -> bool:
   """Returns True if the media route is on LE Audio device, False otherwise."""
   return ad.mbs.media3IsLeaStreamActive() and ad.mbs.btIsLeAudioConnected(target_address)
+
+def ensure_screen_weak_up(
+    ad: android_device.AndroidDevice
+) -> None:
+  """Ensures the Android device screen is awake."""
+  ad.adb.shell('input keyevent KEYCODE_WAKEUP')
+  time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
+  ad.adb.shell('input keyevent KEYCODE_HOME')
+  time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())

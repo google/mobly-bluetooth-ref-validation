@@ -32,6 +32,7 @@ _MEDIA_FILE = 'testing/assets/test_audio_music.wav'
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=3)
 _MEDIA_PLAY_DURATION = datetime.timedelta(seconds=10)
+_WAIT_BLUETOOTH_STATE_CHANGE = datetime.timedelta(seconds=45)
 
 
 class LEAudioControlTest(bt_base_test.BtRefBaseTest):
@@ -71,9 +72,17 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
     # Discover and pair the devices
     bluetooth_utils.mbs_pair_devices(
         self.ad, self.ref_primary.bluetooth_address
-    )
-    self.ref_primary.set_on_head_state(True)
+    )                   
+    self.ref_primary.set_on_head_state(True)     
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    bluetooth_utils.assert_wait_condition_true(
+        lambda:self.ad.mbs.btIsLeAudioConnected(
+          self.ref_primary.bluetooth_address
+        ),
+        _WAIT_BLUETOOTH_STATE_CHANGE,
+        'Fail to connect LE Audio device.'
+    )
+
 
     self.lea_enabled = True
 
@@ -132,6 +141,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
           lambda: not self.ad.mbs.media3IsPlayerPlaying(),
           fail_message='Failed to pause media.',
       )
+      time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
       self.ref_primary.media_play()
       bluetooth_utils.assert_wait_condition_true(
@@ -142,6 +152,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
           lambda: bluetooth_utils.is_media_route_on_lea(self.ad, ref_address),
           fail_message='Failed to replay media.',
       )
+      time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
       #################################################################
       # Media fast forward/backward
