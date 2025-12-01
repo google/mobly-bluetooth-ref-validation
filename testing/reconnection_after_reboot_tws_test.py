@@ -29,7 +29,6 @@ from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=5)
 _LONG_DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=20)
-_WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
 
 
 class LEAReconnectionTest(bt_base_test.BtRefBaseTest):

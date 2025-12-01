@@ -72,7 +72,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
     # Discover and pair the devices
     bluetooth_utils.mbs_pair_devices(
         self.ad, self.ref_primary.bluetooth_address
-    )                   
+    )
     self.ref_primary.set_on_head_state(True)     
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     bluetooth_utils.assert_wait_condition_true(

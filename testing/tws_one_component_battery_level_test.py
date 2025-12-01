@@ -28,11 +28,7 @@ from testing.mobly.platforms.bluetooth import bluetooth_reference_device
 from testing.utils import bluetooth_utils
 
 _DELAYS_BETWEEN_ACTIONS = datetime.timedelta(seconds=3)
-_WAIT_FOR_UI_TRANSLATE = datetime.timedelta(seconds=6)
-_WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
 _UI_UPDATE_TIME = datetime.timedelta(seconds=60)
-
-_FIND_DEVICE_SLICE_TITLE = 'Active'
 
 _BATTERY_LEFT = 80
 _BATTERY_RIGHT = 66

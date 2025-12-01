@@ -32,7 +32,7 @@ _WAIT_FOR_UI_TRANSLATE = datetime.timedelta(seconds=20)
 _WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=15)
 
 # ANC slice title
-_ANC_SLICE_TITLE = 'Noise cancellation'
+_ANC_SLICE_TITLE = 'Noise cancellation|Active Noise Control|active noise control'
 _ANC_GRAY_OUT_CONTENT_DESCRIPTION = 'Off'
 
 # Fast Pair log pattern
@@ -72,7 +72,7 @@ class FastPairAncTwsTest(bt_base_test.BtRefBaseTest):
       is_gray_out: bool,
   ) -> None:
     anc_gray_out_obj = (
-        self.ad.uia(text=_ANC_SLICE_TITLE)
+        self.ad.uia(textMatches=_ANC_SLICE_TITLE)
         .top(clazz='android.widget.RadioButton'))
     if is_gray_out:
       asserts.assert_false(
@@ -150,7 +150,7 @@ class FastPairAncTwsTest(bt_base_test.BtRefBaseTest):
     with bluetooth_utils.open_device_detail_settings(self.ad):
       # Check ANC slice shown in device detail and enabled
       asserts.assert_true(
-          self.ad.uia(text=_ANC_SLICE_TITLE).wait.exists(
+          self.ad.uia(textMatches=_ANC_SLICE_TITLE).wait.exists(
               _WAIT_FOR_UI_TRANSLATE
           ),
           'Fail to find ANC slice from Device detail page when device is'
@@ -172,7 +172,7 @@ class FastPairAncTwsTest(bt_base_test.BtRefBaseTest):
     with bluetooth_utils.open_device_detail_settings(self.ad):
       # Check ANC slice shown in device detail and enabled
       asserts.assert_true(
-          self.ad.uia(text='Transparency').wait.exists(
+          self.ad.uia(textContains='Transparency').wait.exists(
               _WAIT_FOR_UI_TRANSLATE
           ),
           'Fail to set ANC mode to transparent from board',
@@ -207,7 +207,7 @@ class FastPairAncTwsTest(bt_base_test.BtRefBaseTest):
 
     with bluetooth_utils.open_device_detail_settings(self.ad):
       asserts.assert_false(
-          self.ad.uia(text=_ANC_SLICE_TITLE).wait.exists(
+          self.ad.uia(textMatches=_ANC_SLICE_TITLE).wait.exists(
               _WAIT_FOR_UI_TRANSLATE
           ),
           'Fail to hide ANC slice in Device Detail when headset is disconnected'
