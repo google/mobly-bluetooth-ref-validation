@@ -43,7 +43,7 @@ class BtPairTwsTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad)
+    bluetooth_utils.setup_android_device(self.ad, enable_le_audio=False)
 
     # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
@@ -86,7 +86,7 @@ class BtPairTwsTest(bt_base_test.BtRefBaseTest):
         [[self.ref_primary], [self.ref_secondary]],
         raise_on_exception=True,
     )
-    bluetooth_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad, [self.ref_primary.bluetooth_address])
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
 

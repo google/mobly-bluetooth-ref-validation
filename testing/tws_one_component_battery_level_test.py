@@ -46,7 +46,7 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad, enable_wifi=True, enable_le_audio=False)
+    bluetooth_utils.setup_android_device(self.ad, enable_le_audio=False)
 
     device_info = self.ad.device_info
     self.is_pixel = 'google' in device_info['build_info']['build_fingerprint'].lower()
@@ -128,7 +128,7 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
     )
 
   def teardown_class(self) -> None:
-    bluetooth_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad, [self.ref_primary.bluetooth_address])
 
 
 if __name__ == '__main__':

@@ -90,19 +90,25 @@ def clear_android_fast_pair_cache(ad: android_device.AndroidDevice) -> None:
     ad.log.exception('No permission to clear fast pair cache.')
 
 
-def clear_bonded_devices(ad: android_device.AndroidDevice) -> None:
+def clear_bonded_devices(
+    ad: android_device.AndroidDevice,
+    address_list: list[str] = [],
+) -> None:
   """Clears the bt bonded devices on android device.
 
   Args:
     ad: The Android device to clear all bonded bt devices.
+    address_list: List of bluetooth addresses to unpair before any other addresses.
   """
-  while paired_devices := ad.mbs.btGetPairedDevices():
-    device = paired_devices[0]
+  for device in ad.mbs.btGetPairedDevices():
+    if device['Address'] in address_list:
+      ad.mbs.btUnpairDevice(device['Address'])
+      time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
+  while devices := ad.mbs.btGetPairedDevices():
+    device = devices[0]
     ad.log.info('Unpairing %s (%s)', device['Address'], device['Name'])
     ad.mbs.btUnpairDevice(device['Address'])
-    # By testing multiple times,
-    # the test results show that this delay improves stability.
-    time.sleep(_WAIT_FOR_UI_TRANSLATE.total_seconds())
+    time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
 
 
 def set_bluetooth_le_audio(
@@ -169,9 +175,8 @@ def is_wifi_data_connected(ad: android_device.AndroidDevice) -> bool:
 
 def setup_android_device(
     ad: android_device.AndroidDevice,
-    setup_fast_pair: bool = False,
     enable_le_audio: bool = True,
-    enable_wifi: bool = False,
+    enable_fast_pair: bool = False,
 ) -> None:
   """Sets up the Android device for Fast Pair."""
   # Load Mobly Bundled Snippets on the Android device. Mobly Bundled Snippets
@@ -189,6 +194,7 @@ def setup_android_device(
     set_bluetooth_le_audio(ad, False)
 
   android_utils.load_mbs_and_uiautomator(ad, uiautomator_snippet_name='uia')
+  grant_storage_access(ad)
 
   # Enable Bluetooth
   if not ad.mbs.btIsEnabled():
@@ -198,7 +204,8 @@ def setup_android_device(
     # ad.adb.shell('settings put global bluetooth_on 1')
     # ad.adb.shell('am broadcast -a android.intent.action.BLUETOOTH_ENABLE --ez_state true')
 
-  if enable_wifi:
+  # Prepare for Fast Pair
+  if enable_fast_pair:
     wifi_enable(ad)
     assert_wait_condition_true(
         lambda: is_wifi_data_connected(ad),
@@ -212,14 +219,12 @@ def setup_android_device(
   # Enable HCI log
   android_utils.enable_bluetooth_hci_log(ad)
 
-  # Prepare for Fast Pair
-  if setup_fast_pair and ad.is_adb_root:
-    clear_android_fast_pair_cache(ad)
-
+  # Clear cache
+  clear_android_fast_pair_cache(ad)
   clear_bonded_devices(ad)
 
   # Make sure the screen is awake
-  ensure_screen_weak_up(ad)
+  ensure_screen_wake_up(ad)
 
   # Start logcat pubsub service
   ad.services.register(
@@ -607,51 +612,14 @@ def push_and_play_audio_on_android(
     ad.adb.shell(f'rm -f {remote_audio_filepath}')
 
 
-@contextlib.contextmanager
-def play_youtube_video_on_android(
-    ad: android_device.AndroidDevice, youtube_video_id: str
-) -> Iterator[None]:
-  """Plays an Youtube video on Android device.
-
-  Args:
-    ad: An Android device setup.
-    youtube_video_id: The ID of the video to play on Youtube.
-
-  Yields:
-      The context for user to trigger action while the video is playing.
-  """
-  try:
-    ad.adb.shell(f'am force-stop {_YOUTUBE_PKG}')
-    ad.adb.shell(
-        f'pm grant {_YOUTUBE_PKG} android.permission.POST_NOTIFICATIONS'
-    )
-  except android_device.adb.AdbError:
-    pass
-
-  time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
-
-  try:
-    ad.adb.shell([
-        'am',
-        'start',
-        '-a',
-        'android.intent.action.VIEW',
-        '-d',
-        f'https://youtu.be/{youtube_video_id}',
-    ])
-    yield
-  finally:
-    # Stops video playing
-    ad.adb.shell(f'am force-stop {_YOUTUBE_PKG}')
-
-
 def is_media_route_on_lea(
     ad: android_device.AndroidDevice, target_address: str
 ) -> bool:
   """Returns True if the media route is on LE Audio device, False otherwise."""
   return ad.mbs.media3IsLeaStreamActive() and ad.mbs.btIsLeAudioConnected(target_address)
 
-def ensure_screen_weak_up(
+
+def ensure_screen_wake_up(
     ad: android_device.AndroidDevice
 ) -> None:
   """Ensures the Android device screen is awake."""
@@ -659,3 +627,16 @@ def ensure_screen_weak_up(
   time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
   ad.adb.shell('input keyevent KEYCODE_HOME')
   time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
+
+
+def grant_access(ad: android_device.AndroidDevice) -> None:
+  """Grant storage access to the Android device."""
+  permissions = [
+      'android.permission.BLUETOOTH_CONNECT',
+      'android.permission.BLUETOOTH_SCAN',
+      'android.permission.BLUETOOTH_ADVERTISE',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+  ]
+  for permission in permissions:
+    self.ad.adb.shell(f'pm grant com.google.snippet.bluetooth {permission}')

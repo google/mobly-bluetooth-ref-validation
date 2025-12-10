@@ -92,7 +92,7 @@ class PowerOnOffTwsTest(bt_base_test.BtRefBaseTest):
         [[self.ref_primary], [self.ref_secondary]],
         raise_on_exception=True,
     )
-    bluetooth_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad, [self.ref_primary.bluetooth_address])
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
 

@@ -47,9 +47,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(
-        self.ad, enable_wifi=True, enable_le_audio=True
-    )
+    bluetooth_utils.setup_android_device(self.ad, enable_le_audio=True)
 
     # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
@@ -92,9 +90,6 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
         'LEA not enabled. Skip following steps.',
     )
 
-    # Open Youtube and start playing video.
-    # We can't use Mobly snippet to play audio here because the audio played by
-    # MBS cannot be paused from the headset.
     try:
       ref_address = self.ref_primary.bluetooth_address.upper()
       self.ad.adb.push([_MEDIA_FILE, _MEDIA_LOCAL_PATH])
@@ -178,7 +173,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
     )
   
   def teardown_class(self) -> None:
-    bluetooth_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad, [self.ref_primary.bluetooth_address])
 
 
 if __name__ == '__main__':

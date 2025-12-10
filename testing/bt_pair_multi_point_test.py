@@ -41,8 +41,8 @@ class BtPairMultiPointTest(bt_base_test.BtRefBaseTest):
     # Register an Android device controller.
     self.ad_a, self.ad_b, *_ = self.register_controller(android_device, 2)
     utils.concurrent_exec(
-        bluetooth_utils.setup_android_device,
-        param_list=[[self.ad_a, enable_le_audio=False], [self.ad_b, enable_le_audio=False]],
+        lambda ad: bluetooth_utils.setup_android_device(ad, enable_le_audio=False),
+        param_list=[[self.ad_a], [self.ad_b]],
         raise_on_exception=True,
     )
 

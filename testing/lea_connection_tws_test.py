@@ -46,14 +46,6 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     self.ad = self.register_controller(android_device)[0]
     bluetooth_utils.setup_android_device(self.ad, enable_le_audio=True)
 
-    permissions = [
-        "android.permission.BLUETOOTH_CONNECT",
-        "android.permission.BLUETOOTH_SCAN",
-        "android.permission.BLUETOOTH_ADVERTISE",
-    ]
-    for permission in permissions:
-        self.ad.adb.shell(f"pm grant com.google.snippet.bluetooth {permission}")
-
     # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
     self.ref_primary, self.ref_secondary = bluetooth_utils.get_tws_device(refs)
@@ -138,7 +130,7 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
     )
 
   def teardown_class(self) -> None:
-    bluetooth_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad, [self.ref_primary.bluetooth_address])
 
 
 if __name__ == '__main__':

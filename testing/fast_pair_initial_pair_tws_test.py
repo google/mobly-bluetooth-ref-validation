@@ -46,12 +46,7 @@ class FastPairInitialPairTwsTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(
-        self.ad,
-        setup_fast_pair=True,
-        enable_wifi=True,
-        enable_le_audio=True,
-    )
+    bluetooth_utils.setup_android_device(self.ad, enable_fast_pair=True)
 
     # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
@@ -92,7 +87,7 @@ class FastPairInitialPairTwsTest(bt_base_test.BtRefBaseTest):
 
   def teardown_test(self):
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-    bluetooth_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad, [self.ref_primary.bluetooth_address])
     self.ad.services.create_output_excerpts_all(self.current_test_info)
     utils.concurrent_exec(
         lambda d: d.create_output_excerpts(self.current_test_info),

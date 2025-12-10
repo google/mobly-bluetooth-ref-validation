@@ -45,15 +45,11 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad, enable_wifi=True, enable_le_audio=False)
+    bluetooth_utils.setup_android_device(self.ad, enable_le_audio=False)
 
     # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
     self.ref_primary, self.ref_secondary = bluetooth_utils.get_tws_device(refs)
-
-    self.ad.adb.shell("pm grant com.google.snippet.bluetooth android.permission.READ_EXTERNAL_STORAGE")
-    self.ad.adb.shell("pm grant com.google.snippet.bluetooth android.permission.WRITE_EXTERNAL_STORAGE")
-
 
   def setup_test(self):
     # Pair the devices
@@ -154,7 +150,9 @@ class MediaControlTest(bt_base_test.BtRefBaseTest):
       )
 
   def teardown_test(self):
-    bluetooth_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(
+        self.ad, [self.ref_primary.bluetooth_address]
+    )
     self.ad.services.create_output_excerpts_all(self.current_test_info)
     utils.concurrent_exec(
         lambda d: d.create_output_excerpts(self.current_test_info),

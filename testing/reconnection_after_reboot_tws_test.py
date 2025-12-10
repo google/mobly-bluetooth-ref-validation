@@ -90,7 +90,7 @@ class LEAReconnectionTest(bt_base_test.BtRefBaseTest):
     )
 
   def teardown_class(self) -> None:
-    bluetooth_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad, [self.ref_primary.bluetooth_address])
 
 
 if __name__ == '__main__':

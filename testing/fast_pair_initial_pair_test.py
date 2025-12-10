@@ -45,12 +45,7 @@ class FastPairInitialPairTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(
-        self.ad,
-        setup_fast_pair=True,
-        enable_wifi=True,
-        enable_le_audio=True,
-    )
+    bluetooth_utils.setup_android_device(self.ad, enable_fast_pair=True)
 
     # Register Bluetooth reference device
     self.ref = self.register_controller(bluetooth_reference_device)[0]

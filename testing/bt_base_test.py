@@ -30,6 +30,11 @@ def _pull_bt_snoop_logs(
     destination: str,
 ):
   def _pull_bt_snoop_log(ad):
+    if not ad.is_adb_root:
+      ad.log.warning(
+          'Andoird device is not rooted. Skip BT snoop collection.'
+      )
+      return
     ad.adb.pull([
         '/data/misc/bluetooth/logs/btsnoop_hci.log',
         f'{destination}/btsnoop_hci_{ad.serial}.log',

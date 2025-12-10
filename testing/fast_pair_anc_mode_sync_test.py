@@ -66,11 +66,8 @@ class FastPairAncModeSyncTest(bt_base_test.BtRefBaseTest):
     ads = self.register_controller(android_device, 2)
     self.initial_pair_phone, self.subsequent_pair_phone = ads
     utils.concurrent_exec(
-        bluetooth_utils.setup_android_device,
-        [
-            [self.initial_pair_phone, True, True, True],
-            [self.subsequent_pair_phone, True, True, True],
-        ],
+        lambda ad: bluetooth_utils.setup_android_device(ad, enable_fast_pair=True),
+        [[self.initial_pair_phone], [self.subsequent_pair_phone]],
         raise_on_exception=True,
     )
 

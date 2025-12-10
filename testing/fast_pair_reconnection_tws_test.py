@@ -44,12 +44,7 @@ class FastPairReconnectionTwsTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(
-        self.ad,
-        setup_fast_pair=True,
-        enable_wifi=True,
-        enable_le_audio=True,
-    )
+    bluetooth_utils.setup_android_device(self.ad, enable_fast_pair=True)
 
     # Register Bluetooth reference devices.
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
@@ -149,7 +144,7 @@ class FastPairReconnectionTwsTest(bt_base_test.BtRefBaseTest):
     )
 
   def teardown_class(self) -> None:
-    bluetooth_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad, [self.ref_primary.bluetooth_address])
 
 
 if __name__ == '__main__':

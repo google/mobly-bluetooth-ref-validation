@@ -27,7 +27,8 @@ from testing.utils import bluetooth_utils
 
 _MEDIA_PLAY_DURATION = datetime.timedelta(seconds=10)
 
-_AUDIO_FILE_PATH = 'testing/assets/test_audio_music.wav'
+_MEDIA_LOCAL_PATH = '/data/local/tmp/test_audio_music.wav'
+_MEDIA_FILE = 'testing/assets/test_audio_music.wav'
 
 
 class MediaPlayTest(bt_base_test.BtRefBaseTest):
@@ -72,19 +73,24 @@ class MediaPlayTest(bt_base_test.BtRefBaseTest):
 
   def test_media_play(self):
     bt_address = self.ref_primary.bluetooth_address.upper()
+    self.ad.adb.push([_MEDIA_FILE, _MEDIA_LOCAL_PATH])
 
-    # Start audio playing
-    with bluetooth_utils.push_and_play_audio_on_android(
-        self.ad, _AUDIO_FILE_PATH
-    ):
+    try:
+      self.ad.mbs.media3StartLocalFile(_MEDIA_LOCAL_PATH)
+
+      bluetooth_utils.assert_wait_condition_true(
+          lambda: self.ad.mbs.media3IsPlayerPlaying(),
+          fail_message='Failed to start playing media.',
+      )
       bluetooth_utils.assert_wait_condition_true(
           lambda: self.ad.mbs.btIsA2dpPlaying(bt_address),
           fail_message='Failed to start playing media.',
       )
-      time.sleep(_MEDIA_PLAY_DURATION.total_seconds())
+    finally:
+      self.ad.mbs.media3Stop()
 
   def teardown_test(self):
-    bluetooth_utils.clear_bonded_devices(self.ad)
+    bluetooth_utils.clear_bonded_devices(self.ad, [self.ref_primary.bluetooth_address])
     self.ad.services.create_output_excerpts_all(self.current_test_info)
     utils.concurrent_exec(
         lambda d: d.create_output_excerpts(self.current_test_info),
