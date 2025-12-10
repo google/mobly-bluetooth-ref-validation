@@ -270,9 +270,17 @@ def mbs_pair_devices(
   mbs_pair_with_retry(ad, address)
   logging.info('Devices paired.')
 
-  assert_device_bonded_via_address(ad, address)
+  assert_device_bonded_via_address(
+      ad,
+      address,
+      fail_message=f'Failed to confirm Bluetooth {address} is paired',
+  )
   if secondary_address:
-    assert_device_bonded_via_address(ad, secondary_address)
+    assert_device_bonded_via_address(
+        ad,
+        secondary_address,
+        fail_message=f'Failed to confirm Bluetooth {secondary_address} is paired',
+    )
 
 
 def assert_wait_condition_true(
