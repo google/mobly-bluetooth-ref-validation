@@ -194,7 +194,7 @@ def setup_android_device(
     set_bluetooth_le_audio(ad, False)
 
   android_utils.load_mbs_and_uiautomator(ad, uiautomator_snippet_name='uia')
-  grant_storage_access(ad)
+  grant_access(ad)
 
   # Enable Bluetooth
   if not ad.mbs.btIsEnabled():
@@ -639,4 +639,4 @@ def grant_access(ad: android_device.AndroidDevice) -> None:
       'android.permission.WRITE_EXTERNAL_STORAGE',
   ]
   for permission in permissions:
-    self.ad.adb.shell(f'pm grant com.google.snippet.bluetooth {permission}')
+    ad.adb.shell(f'pm grant com.google.snippet.bluetooth {permission}')

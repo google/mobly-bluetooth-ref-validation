@@ -63,6 +63,7 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
         [[self.ref_primary], [self.ref_secondary]],
         raise_on_exception=True,
     )
+    self.ref_primary.set_component_number(2)
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     self.ref_primary.start_pairing_mode()
 
@@ -71,7 +72,6 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
     bluetooth_utils.mbs_pair_devices(
         self.ad, self.ref_primary.bluetooth_address
     )
-    self.ref_primary.set_on_head_state(True)     
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     bluetooth_utils.assert_wait_condition_true(
         lambda:self.ad.mbs.btIsLeAudioConnected(
@@ -80,7 +80,6 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
         _WAIT_BLUETOOTH_STATE_CHANGE,
         'Fail to connect LE Audio device.'
     )
-
 
     self.lea_enabled = True
 
