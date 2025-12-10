@@ -66,7 +66,9 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
 
   def setup_test(self) -> None:
     bluetooth_utils.mbs_pair_devices(
-        self.ad, self.ref_primary.bluetooth_address
+        self.ad,
+        self.ref_primary.bluetooth_address,
+        secondary_address=self.ref_secondary.bluetooth_address,
     )
     
     self.ad.mbs.btLeAudioConnect(self.ref_primary.bluetooth_address)

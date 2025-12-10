@@ -68,7 +68,11 @@ class MediaPlayTest(bt_base_test.BtRefBaseTest):
     )
     self.ref_primary.set_component_number(2)
 
-    bluetooth_utils.mbs_pair_devices(self.ad, self.ref_primary.bluetooth_address)
+    bluetooth_utils.mbs_pair_devices(
+        self.ad,
+        self.ref_primary.bluetooth_address,
+        secondary_address=self.ref_secondary.bluetooth_address,
+    )
     self.ad.mbs.btA2dpConnect(self.ref_primary.bluetooth_address.upper())
 
   def test_media_play(self):

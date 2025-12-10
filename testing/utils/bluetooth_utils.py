@@ -252,7 +252,9 @@ def mbs_pair_with_retry(ad: android_device.AndroidDevice, address: str) -> None:
   ad.mbs.btPairDevice(address.upper())
 
 
-def mbs_pair_devices(ad: android_device.AndroidDevice, address: str) -> None:
+def mbs_pair_devices(
+    ad: android_device.AndroidDevice, address: str, secondary_address: str = ''
+) -> None:
   """Pairs the Android and reference device using MBS."""
   initial_name = assert_device_discovered(ad, address)
   logging.info(f'Discovered target device, name: {initial_name}')
@@ -269,6 +271,8 @@ def mbs_pair_devices(ad: android_device.AndroidDevice, address: str) -> None:
   logging.info('Devices paired.')
 
   assert_device_bonded_via_address(ad, address)
+  if secondary_address:
+    assert_device_bonded_via_address(ad, secondary_address)
 
 
 def assert_wait_condition_true(

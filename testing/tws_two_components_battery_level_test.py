@@ -86,7 +86,11 @@ class TwsTwoComponentsTest(bt_base_test.BtRefBaseTest):
 
     self.ref_primary.start_pairing_mode()
     # Pair the Android phone with ref.
-    bluetooth_utils.mbs_pair_devices(self.ad, self.ref_primary.bluetooth_address)
+    bluetooth_utils.mbs_pair_devices(
+        self.ad,
+        self.ref_primary.bluetooth_address,
+        secondary_address=self.ref_secondary.bluetooth_address,
+    )
 
     bluetooth_utils.assert_device_bonded_via_address(
       self.ad, self.ref_primary.bluetooth_address

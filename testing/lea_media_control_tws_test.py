@@ -70,7 +70,9 @@ class LEAudioControlTest(bt_base_test.BtRefBaseTest):
   def test_1_pair_bes_and_enable_le_audio(self):
     # Discover and pair the devices
     bluetooth_utils.mbs_pair_devices(
-        self.ad, self.ref_primary.bluetooth_address
+        self.ad,
+        self.ref_primary.bluetooth_address,
+        secondary_address=self.ref_secondary.bluetooth_address,
     )
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
     bluetooth_utils.assert_wait_condition_true(

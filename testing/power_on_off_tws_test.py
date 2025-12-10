@@ -64,7 +64,11 @@ class PowerOnOffTwsTest(bt_base_test.BtRefBaseTest):
   def test_tws_power_off_then_on_reconnect(self) -> None:
     ref_address = self.ref_primary.bluetooth_address.upper()
 
-    bluetooth_utils.mbs_pair_devices(self.ad, ref_address)
+    bluetooth_utils.mbs_pair_devices(
+        self.ad,
+        ref_address,
+        secondary_address=self.ref_secondary.bluetooth_address,
+    )
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
 
     self.ref_primary.power_off()
