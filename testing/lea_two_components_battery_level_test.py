@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test Bluetooth one component TWS pairing of reference device."""
+"""Test Bluetooth two component TWS pairing of reference device."""
 
 import datetime
 import time
@@ -32,9 +32,10 @@ _UI_UPDATE_TIME = datetime.timedelta(seconds=60)
 
 _BATTERY_LEFT = 80
 _BATTERY_RIGHT = 66
+_BATTERY_CASE = 90
 
 
-class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
+class TwsTwoComponentsTest(bt_base_test.BtRefBaseTest):
   """A Mobly Test to test TWS pairing of reference device."""
 
   ad: android_device.AndroidDevice
@@ -46,8 +47,7 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
 
     # Register an Android device controller.
     self.ad = self.register_controller(android_device)[0]
-    bluetooth_utils.setup_android_device(self.ad, enable_le_audio=False)
-
+    bluetooth_utils.setup_android_device(self.ad, enable_le_audio=True)
     device_info = self.ad.device_info
     self.is_pixel = 'google' in device_info['build_info']['build_fingerprint'].lower()
 
@@ -60,7 +60,7 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
         raise_on_exception=True,
     )
 
-  def test_1_set_tws_one_component(self) -> None:
+  def test_1_set_tws_two_components(self) -> None:
     utils.concurrent_exec(
         lambda d: d.enable_tws(),
         [[self.ref_primary], [self.ref_secondary]],
@@ -71,29 +71,36 @@ class TwsOneComponentTest(bt_base_test.BtRefBaseTest):
         [[self.ref_primary], [self.ref_secondary]],
         raise_on_exception=True,
     )
-    self.ref_primary.set_component_number(1)
-    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ref_primary.set_component_number(2)
 
   def test_2_set_battery_level_and_pair(self) -> None:
-    self.ref_primary.set_battery_level_tws(_BATTERY_LEFT, _BATTERY_RIGHT)
-    (battery_left, battery_right, _) = self.ref_primary.get_battery_level_tws()
+    self.ref_primary.set_battery_level_tws(
+        _BATTERY_LEFT, _BATTERY_RIGHT, _BATTERY_CASE
+    )
+    (battery_left, battery_right, battery_case) = (
+        self.ref_primary.get_battery_level_tws()
+    )
     asserts.assert_equal(battery_left, _BATTERY_LEFT)
     asserts.assert_equal(battery_right, _BATTERY_RIGHT)
+    asserts.assert_equal(battery_case, _BATTERY_CASE)
 
-    bluetooth_utils.mbs_pair_devices(self.ad, self.ref_primary.bluetooth_address)
+    self.ref_primary.start_pairing_mode()
+    # Pair the Android phone with ref.
+    bluetooth_utils.mbs_pair_devices(
+        self.ad,
+        self.ref_primary.bluetooth_address,
+        secondary_address=self.ref_secondary.bluetooth_address,
+    )
+
     bluetooth_utils.assert_device_bonded_via_address(
       self.ad, self.ref_primary.bluetooth_address
     )
+    bluetooth_utils.assert_device_bonded_via_address(
+      self.ad, self.ref_secondary.bluetooth_address
+    )
     self.paired = True
-    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-    # Secondary device not in paired list
-    paired_device_list = [
-        device['Address'].upper() for device in self.ad.mbs.btGetPairedDevices()
-    ]
-    asserts.assert_not_in(
-      self.ref_secondary.bluetooth_address.upper(), paired_device_list)
 
-  def test_3_check_battery_show_one_ear(self):
+  def test_3_check_battery_show_both_ear(self) -> None:
     asserts.skip_if(
         not hasattr(self, 'paired'),
         'Devices not paired. Skip following steps.',
