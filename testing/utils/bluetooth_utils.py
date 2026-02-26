@@ -256,6 +256,7 @@ def mbs_pair_devices(
     ad: android_device.AndroidDevice, address: str, secondary_address: str = ''
 ) -> None:
   """Pairs the Android and reference device using MBS."""
+  ad.adb.shell('input keyevent KEYCODE_WAKEUP')
   initial_name = assert_device_discovered(ad, address)
   logging.info(f'Discovered target device, name: {initial_name}')
 
@@ -311,6 +312,7 @@ def assert_device_discovered(
   """Discovers device with given Bluetooth address."""
   deadline = time.perf_counter() + timeout.total_seconds()
   while time.perf_counter() <= deadline:
+    ad.adb.shell('true')
     device_list = ad.mbs.btDiscoverAndGetResults()
     logging.debug(
         '[assert_device_discovered] Discovered device list: %s',
