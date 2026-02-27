@@ -35,7 +35,7 @@ _BATTERY_RIGHT = 66
 _BATTERY_CASE = 90
 
 
-class TwsTwoComponentsTest(bt_base_test.BtRefBaseTest):
+class LEATwoComponentsTest(bt_base_test.BtRefBaseTest):
   """A Mobly Test to test TWS pairing of reference device."""
 
   ad: android_device.AndroidDevice

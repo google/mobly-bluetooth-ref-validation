@@ -29,8 +29,8 @@ from testing import lea_connection_tws_test
 from testing import lea_media_control_tws_test
 from testing import lea_power_on_off_tws_test
 from testing import power_on_off_tws_test
-from testing import tws_one_component_battery_level_test
-from testing import tws_two_components_battery_level_test
+from testing import lea_one_component_battery_level_test
+from testing import lea_two_components_battery_level_test
 
 
 if __name__ == '__main__':
@@ -43,8 +43,8 @@ if __name__ == '__main__':
       lea_power_on_off_tws_test.LEAPowerOnOffTwsTest,
       lea_audio_streaming_tws_test.LEAudioTest,
       lea_media_control_tws_test.LEAudioControlTest,
-      tws_one_component_battery_level_test.TwsOneComponentTest,
-      tws_two_components_battery_level_test.TwsTwoComponentsTest,
+      lea_one_component_battery_level_test.LEAOneComponentTest,
+      lea_two_components_battery_level_test.LEATwoComponentsTest,
       fast_pair_initial_pair_tws_test.FastPairInitialPairTwsTest,
       fast_pair_anc_tws_test.FastPairAncTwsTest,
       fast_pair_ring_device_tws_test.FastPairRingDeviceTest,
