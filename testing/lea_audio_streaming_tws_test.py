@@ -67,11 +67,10 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
         secondary_address=self.ref_secondary.bluetooth_address,
     )
     bluetooth_utils.assert_wait_condition_true(
-        lambda:self.ad.mbs.btIsLeAudioConnected(
+        func=lambda:self.ad.mbs.btIsLeAudioConnected(
           self.ref_primary.bluetooth_address
         ),
-        _WAIT_BLUETOOTH_STATE_CHANGE,
-        'Fail to connect LE Audio device.'
+        fail_message='Fail to connect LE Audio device.'
     )
 
   def test_le_audio_streaming(self):
