@@ -50,14 +50,9 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
     refs = self.register_controller(bluetooth_reference_device, min_number=2)
     self.ref_primary, self.ref_secondary = bluetooth_utils.get_tws_device(refs)
 
-    utils.concurrent_exec(
-        lambda d, wait_access: d.factory_reset(wait_access),
-        [[self.ref_primary, True], [self.ref_secondary, False]],
-        raise_on_exception=True,
+    bluetooth_utils.setup_tws_devices(
+        self.ref_primary, self.ref_secondary, component_number=2
     )
-    self.ref_primary.set_component_number(2)
-    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-    self.ref_primary.start_pairing_mode()
 
   def setup_test(self):
     # Discover and pair the devices
@@ -101,7 +96,13 @@ class LEAudioTest(bt_base_test.BtRefBaseTest):
     )
 
   def teardown_class(self) -> None:
-    bluetooth_utils.clear_bonded_devices(self.ad, [self.ref_primary.bluetooth_address])
+    bluetooth_utils.clear_bonded_devices(
+        self.ad,
+        [
+            self.ref_primary.bluetooth_address,
+            self.ref_secondary.bluetooth_address,
+        ],
+    )
 
 
 if __name__ == '__main__':

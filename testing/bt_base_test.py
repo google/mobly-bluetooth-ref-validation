@@ -15,12 +15,14 @@
 """The base test class for BT validation."""
 
 import logging
+import os
 
 from mobly import base_test
 from mobly import records
 from mobly import test_runner
 from mobly import utils
 from mobly.controllers import android_device
+from mobly.controllers.android_device_lib import adb
 
 from testing.utils import constants
 
@@ -29,21 +31,34 @@ def _pull_bt_snoop_logs(
     ads: list[android_device.AndroidDevice],
     destination: str,
 ):
+  os.makedirs(destination, exist_ok=True)
+
   def _pull_bt_snoop_log(ad):
+    dumpsys_path = os.path.join(
+        destination, f'dumpsys_bluetooth_manager_{ad.serial}.txt'
+    )
+    try:
+      dumpsys_out = ad.adb.shell('dumpsys bluetooth_manager')
+      with open(dumpsys_path, 'wb') as f:
+        f.write(dumpsys_out)
+    except adb.AdbError:
+      ad.log.warning('Failed to capture dumpsys bluetooth_manager.')
+
     if not ad.is_adb_root:
       ad.log.warning(
-          'Andoird device is not rooted. Skip BT snoop collection.'
+          'Android device is not rooted. Skip BT snoop collection.'
       )
       return
-    ad.adb.pull([
-        '/data/misc/bluetooth/logs/btsnoop_hci.log',
-        f'{destination}/btsnoop_hci_{ad.serial}.log',
-    ])
+    snoop_dest = os.path.join(destination, f'btsnoop_hci_{ad.serial}.log')
+    try:
+      ad.adb.pull(['/data/misc/bluetooth/logs/btsnoop_hci.log', snoop_dest])
+    except adb.AdbError:
+      ad.log.warning('Failed to pull btsnoop_hci.log from %s.', ad.serial)
 
   utils.concurrent_exec(
       _pull_bt_snoop_log,
       [[ad] for ad in ads],
-      raise_on_exception=True,
+      raise_on_exception=False,
   )
 
 
