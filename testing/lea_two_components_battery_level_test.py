@@ -71,6 +71,7 @@ class LEATwoComponentsTest(bt_base_test.BtRefBaseTest):
         [[self.ref_primary], [self.ref_secondary]],
         raise_on_exception=True,
     )
+    self.ref_primary.wait_for_tws_connected()
     self.ref_primary.set_component_number(2)
 
   def test_2_set_battery_level_and_pair(self) -> None:
@@ -135,7 +136,13 @@ class LEATwoComponentsTest(bt_base_test.BtRefBaseTest):
     )
 
   def teardown_class(self) -> None:
-    bluetooth_utils.clear_bonded_devices(self.ad, [self.ref_primary.bluetooth_address])
+    bluetooth_utils.clear_bonded_devices(
+        self.ad,
+        [
+            self.ref_primary.bluetooth_address,
+            self.ref_secondary.bluetooth_address,
+        ],
+    )
 
 
 if __name__ == '__main__':

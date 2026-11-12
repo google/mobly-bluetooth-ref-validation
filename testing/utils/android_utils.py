@@ -68,13 +68,14 @@ def load_mbs_and_uiautomator(
 
 
 def enable_bluetooth_hci_log(ad: android_device.AndroidDevice) -> None:
-  """Enables bluetooth HCI log."""
+  """Enables bluetooth HCI log with an extended snoop file size limit."""
   try:
     ad.adb.shell('setprop persist.bluetooth.btsnooplogmode full')
+    ad.adb.shell('setprop persist.bluetooth.btsnoopsize 0xfffffffffffffff')
     ad.adb.shell('svc bluetooth disable')
     time.sleep(_DELAY_AFTER_CHANGE_BT_STATUS.total_seconds())
     ad.adb.shell('svc bluetooth enable')
     time.sleep(_DELAY_AFTER_CHANGE_BT_STATUS.total_seconds())
   except adb.AdbError:
-    ad.log.exception('No permission to enable bluetoothe HCI log.')
+    ad.log.exception('No permission to enable bluetooth HCI log.')
 

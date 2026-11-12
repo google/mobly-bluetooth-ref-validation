@@ -25,6 +25,7 @@ could result in inconsistent timing of logcat lines.
 import collections
 import datetime
 import fnmatch
+import os
 import re
 import subprocess
 import sys
@@ -99,11 +100,21 @@ class LogcatPublisher(object):
       raise LogcatError('Publisher process is already running.')
 
     if sys.platform == 'win32':
+      log_dir = os.path.dirname(str(self._logcat_file_path))
+      if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+      if not os.path.exists(self._logcat_file_path):
+        with open(self._logcat_file_path, 'a', encoding='utf-8'):
+          pass
+      escaped_path = str(self._logcat_file_path).replace("'", "''")
       cmd = [
           'powershell',
-          'Get-Content',
-          '-Wait',
-          f'-Path "{self._logcat_file_path}"',
+          '-NoProfile',
+          '-Command',
+          (
+              '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; '
+              f"Get-Content -Encoding UTF8 -Wait -LiteralPath '{escaped_path}'"
+          ),
       ]
     else:
       cmd = ['tail', '-F', self._logcat_file_path]
@@ -120,10 +131,20 @@ class LogcatPublisher(object):
 
   def stop(self):
     """Stop the publisher process and task."""
-    if self.is_active:
+    if self._process is not None and self._process.returncode is None:
       self._process.terminate()
-      self._process.wait()
-      self._thread.join()
+      self._process.wait(timeout=5)
+    if self._thread is not None and self._thread.is_alive():
+      self._thread.join(timeout=5)
+    if self._process is not None:
+      for stream in (
+          self._process.stdin,
+          self._process.stdout,
+          self._process.stderr,
+      ):
+        if stream is not None:
+          stream.close()
+      self._process = None
 
   def event(self, pattern='.*', tag='*', level='V'):
     """Context manager object for a logcat event.

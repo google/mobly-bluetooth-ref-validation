@@ -89,12 +89,15 @@ class SystemLogger(object):
   def start(self) -> None:
     if self.is_active:
       return
-    self._thread = threading.Thread(target=self._start_record_log)
+    self.stop_record_log = False
+    self._thread = threading.Thread(target=self._start_record_log, daemon=True)
     self._thread.start()
 
   def stop(self) -> None:
     self.stop_log()
-    self._thread.join()
+    if self._thread is not None and self._thread.is_alive():
+      self._thread.join(timeout=5)
+    self._thread = None
 
   def send_command(self, command_str: str) -> None:
     """Sends command to device serial port."""
@@ -126,35 +129,48 @@ class SystemLogger(object):
       raise Error("log file was not opened")
 
     leftover = b""
-    while True:
+    while not self.stop_record_log:
       try:
+        log_byte = b""
         with self._lock:
-          if self.serial_port is None or not self.serial_port.isOpen() or self.stop_record_log:
+          if (
+              self.serial_port is None
+              or not self.serial_port.isOpen()
+              or self.stop_record_log
+          ):
             break
-          if self.serial_port.in_waiting < 16:
-            continue
-          log_byte = self.serial_port.read(self.serial_port.in_waiting)
+          waiting = self.serial_port.in_waiting
+          if waiting > 0:
+            log_byte = self.serial_port.read(waiting)
+        if not log_byte:
+          time.sleep(0.01)
+          continue
         leftover = self._log_handle(log_byte, leftover)
       except Exception:
+        if self.stop_record_log:
+          break
         logging.exception("record system log fail")
-        pass
+        time.sleep(0.05)
 
   def stop_log(self) -> None:
     """Stops logging."""
+    self.stop_record_log = True
     try:
-      if self.serial_port:
-        if self.serial_port.isOpen():
-          with self._lock:
+      with self._lock:
+        if self.serial_port is not None:
+          if self.serial_port.isOpen():
             self.serial_port.close()
-            self.serial_port = None
-          time.sleep(2)
-          self.file_handle.close()
-        else:
-          raise Error(f"serial port '{self.sys_log_port}'' was not opened")
-      else:
-        raise Error(f"serial port '{self.sys_log_port}'' was not opened")
+          self.serial_port = None
+      if (
+          self._thread is not None
+          and self._thread.is_alive()
+          and threading.current_thread() is not self._thread
+      ):
+        self._thread.join(timeout=2)
+      if self.file_handle is not None:
+        self.file_handle.flush()
+        self.file_handle.close()
     except Exception as e:
       raise Error("stop log port fail") from e
     finally:
       self.file_handle = None
-      self.stop_record_log = True

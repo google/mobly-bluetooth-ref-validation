@@ -177,7 +177,7 @@ feature, please follow these steps:
             serial_port: 'COM1'
             bluetooth_address: '11:22:33:44:55:66'
     MoblyParams:
-      LogPath: 'C:/User/<username>/AppData/Local/Temp'
+      LogPath: 'C:/Users/<username>/AppData/Local/Temp'
     ```
 
 1.  Save the configure YAML file.

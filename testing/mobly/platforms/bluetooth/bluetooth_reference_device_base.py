@@ -311,6 +311,12 @@ class BluetoothReferenceDeviceBase(metaclass=abc.ABCMeta):
   def pair_tws(self) -> None:
     """Pairs two devices to create a pair of TWS earpods."""
 
+  def wait_for_tws_connected(
+      self, timeout: datetime.timedelta = datetime.timedelta(seconds=30)
+  ) -> None:
+    """Waits until the TWS peer connection and state sync are ready."""
+    del timeout  # Unused by default.
+
   @abc.abstractmethod
   def get_in_box_state(self) -> bool:
     """Gets if the TWS earpods are in the box."""

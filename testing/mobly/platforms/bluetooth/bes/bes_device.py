@@ -88,9 +88,8 @@ _GET_BATTERY_LEVEL_TWS_PATTERN = re.compile(
     r'Main ear battery_level: (?P<left_level>\d+)\nRemote ear battery_level:'
     r' (?P<right_level>\d+)(\nCase battery_level: (?P<case_level>\d+))?.*'
 )
-_SEPARATER = '\r\n' if sys.platform == 'win32' else '\n'
 _PAIRED_DEVICE_INFO_PATTERN = re.compile(
-    rf'addr: (?P<addr>.*){_SEPARATER}.*name: (?P<name>.*)'
+    r'addr: (?P<addr>.*)\r?\n.*name: (?P<name>.*)'
 )
 _LE_PAIRED_DEVICE_INFO_PATTERN = re.compile(r'BLE addr: (?P<addr>.*)')
 _BOX_STATE_PATTERN = re.compile(r'box_state=(?P<state>.*)')
@@ -268,14 +267,14 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
 
   def __init__(self, config: bes_device_config.DeviceConfig) -> None:
     self.config = config
-    self.bluetooth_address = self.config.bluetooth_address
+    self.bluetooth_address = self.config.bluetooth_address.upper()
 
     # logging.log_path only exists when this is used in a Mobly test run.
     log_path_base = getattr(logging, 'log_path', '/tmp/logs')
     device_log_directory_name = mobly_logger.sanitize_filename(
-        f'BesDevice_{config.bluetooth_address}'
+        f'BesDevice_{self.bluetooth_address}'
     )
-    self._debug_tag = config.bluetooth_address
+    self._debug_tag = self.bluetooth_address
     self.log_path = os.path.join(log_path_base, device_log_directory_name)
     mobly_utils.create_dir(self.log_path)
     self.log = mobly_logger.PrefixLoggerAdapter(
@@ -377,7 +376,7 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
       if not self._log_collecting_process.open_port(
         self.config.serial_port, _DEFAULT_BAUD_RATE, str(local_log_path)
       ):
-        raise Error('Open serial port timeout')
+        raise BesDeviceError('Open serial port timeout')
       self._log_collecting_process.start()
     else:
       self._configure_serial_connection()
@@ -461,15 +460,18 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
     excerpts_path = pathlib.Path(test_info.output_path, self._output_filename)
     self.log.debug('Creating output excerpts as file: %s', excerpts_path)
     self._log_clipper.clip_new_content(excerpts_path)
-    # self._generate_output_filename()
+    self._set_next_output_filename()
     return [excerpts_path]
 
-  def _generate_output_filename(self) -> None:
+  def _set_next_output_filename(self) -> None:
     timestamp = mobly_logger.get_log_file_timestamp()
     bluetooth_address_escape = self.bluetooth_address.replace(':', '-')
     self._output_filename = (
         f'bes_log,{bluetooth_address_escape},{timestamp}.txt'
     )
+
+  def _generate_output_filename(self) -> None:
+    self._set_next_output_filename()
     self._log_board_time(self._output_filename)
 
   def _send_bes_command(self, command: str, wait_response: bool = True) -> str:
@@ -802,6 +804,28 @@ class BesDevice(bluetooth_reference_device_base.BluetoothReferenceDeviceBase):
 
   def pair_tws(self) -> None:
     self._send_bes_command(constants.BESCommand.TWS_PAIRING)
+
+  def is_tws_connected(self) -> bool:
+    """Returns True if the TWS peer link and state sync are established."""
+    try:
+      self.get_battery_level_tws()
+      return True
+    except BesRuntimeError:
+      return False
+
+  def wait_for_tws_connected(
+      self, timeout: datetime.timedelta = _REBOOT_TIMEOUT
+  ) -> None:
+    """Waits until the TWS peer link and state sync are established."""
+    deadline = time.perf_counter() + timeout.total_seconds()
+    while time.perf_counter() <= deadline:
+      if self.is_tws_connected():
+        self.log.info('TWS peer connection and battery sync verified.')
+        return
+      time.sleep(1.0)
+    raise BesRuntimeError(
+        f'TWS peer did not synchronize within {timeout.total_seconds():.0f}s.'
+    )
 
   def set_component_number(self, number: int) -> None:
     if number not in (1, 2):

@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence
 import contextlib
 import datetime
 import logging
@@ -23,6 +23,7 @@ import time
 from typing import TypeAlias
 
 from mobly import asserts
+from mobly import utils as mobly_utils
 from mobly.controllers import android_device
 from mobly.controllers.android_device_lib import adb
 from mobly.snippet import errors as snippet_errors
@@ -56,6 +57,7 @@ _BLUETOOTH_OPERATION_TIME = datetime.timedelta(seconds=30)
 _WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
 _INITIAL_PAIR_DISCOVER_TIME = datetime.timedelta(seconds=30)
 _SUBSEQUENT_PAIR_CONNECTION_TIME = datetime.timedelta(seconds=90)
+_CSIP_PAIR_TIMEOUT = datetime.timedelta(seconds=90)
 
 # Error messages
 _CONDITION_NOT_TRUE_MSG = 'The condition is not true after timeout.'
@@ -92,7 +94,7 @@ def clear_android_fast_pair_cache(ad: android_device.AndroidDevice) -> None:
 
 def clear_bonded_devices(
     ad: android_device.AndroidDevice,
-    address_list: list[str] = [],
+    address_list: Sequence[str] = (),
 ) -> None:
   """Clears the bt bonded devices on android device.
 
@@ -100,14 +102,24 @@ def clear_bonded_devices(
     ad: The Android device to clear all bonded bt devices.
     address_list: List of bluetooth addresses to unpair before any other addresses.
   """
+  priority_addresses = {addr.upper() for addr in address_list}
   for device in ad.mbs.btGetPairedDevices():
-    if device['Address'] in address_list:
-      ad.mbs.btUnpairDevice(device['Address'])
+    if device['Address'].upper() in priority_addresses:
+      try:
+        ad.mbs.btUnpairDevice(device['Address'])
+      except snippet_errors.ApiError:
+        ad.log.warning('Device %s already unpaired.', device['Address'])
       time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
-  while devices := ad.mbs.btGetPairedDevices():
+  for _ in range(20):
+    devices = ad.mbs.btGetPairedDevices()
+    if not devices:
+      break
     device = devices[0]
     ad.log.info('Unpairing %s (%s)', device['Address'], device['Name'])
-    ad.mbs.btUnpairDevice(device['Address'])
+    try:
+      ad.mbs.btUnpairDevice(device['Address'])
+    except snippet_errors.ApiError:
+      ad.log.warning('Device %s already unpaired.', device['Address'])
     time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
 
 
@@ -127,6 +139,8 @@ def set_bluetooth_le_audio(
   else:
     ad.adb.shell('setprop persist.bluetooth.leaudio.bypass_allow_list false')
   ad.reboot()
+  if not ad.is_adb_root and ad.is_rootable:
+    ad.adb.root()
   time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
 
 
@@ -193,16 +207,17 @@ def setup_android_device(
   else:
     set_bluetooth_le_audio(ad, False)
 
+  # Enable HCI log before loading snippets so Bluetooth service restart does not
+  # invalidate BluetoothProfile proxies bound during snippet initialization.
+  android_utils.enable_bluetooth_hci_log(ad)
+
   android_utils.load_mbs_and_uiautomator(ad, uiautomator_snippet_name='uia')
   grant_access(ad)
 
-  # Enable Bluetooth
+  # Ensure Bluetooth is enabled
   if not ad.mbs.btIsEnabled():
     ad.adb.shell('svc bluetooth enable')
-      
-    # The way can enable blueooth same as 'svc bluetooth enable'
-    # ad.adb.shell('settings put global bluetooth_on 1')
-    # ad.adb.shell('am broadcast -a android.intent.action.BLUETOOTH_ENABLE --ez_state true')
+    time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
 
   # Prepare for Fast Pair
   if enable_fast_pair:
@@ -215,9 +230,6 @@ def setup_android_device(
     )
   else:
     wifi_disable(ad)
-
-  # Enable HCI log
-  android_utils.enable_bluetooth_hci_log(ad)
 
   # Clear cache
   clear_android_fast_pair_cache(ad)
@@ -241,47 +253,122 @@ def get_tws_device(refs: list[BtRefDevice]) -> tuple[BtRefDevice, BtRefDevice]:
   return (refs[1], refs[0])
 
 
-def mbs_pair_with_retry(ad: android_device.AndroidDevice, address: str) -> None:
+def setup_tws_devices(
+    ref_primary: BtRefDevice,
+    ref_secondary: BtRefDevice,
+    component_number: int = 2,
+    start_pairing: bool = True,
+) -> None:
+  """Resets, pairs, and synchronizes a TWS reference device pair."""
+  mobly_utils.concurrent_exec(
+      lambda d, wait_access: d.factory_reset(wait_access),
+      [[ref_primary, True], [ref_secondary, False]],
+      raise_on_exception=True,
+  )
+  mobly_utils.concurrent_exec(
+      lambda d: d.enable_tws(),
+      [[ref_primary], [ref_secondary]],
+      raise_on_exception=True,
+  )
+  mobly_utils.concurrent_exec(
+      lambda d: d.pair_tws(),
+      [[ref_primary], [ref_secondary]],
+      raise_on_exception=True,
+  )
+  ref_primary.wait_for_tws_connected()
+  ref_primary.set_component_number(component_number)
+  time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
+  if start_pairing:
+    ref_primary.start_pairing_mode()
+
+
+def _stop_auto_accept_pair_request(ad: android_device.AndroidDevice) -> None:
+  """Safely stops and removes any registered auto-accept pairing receiver."""
   try:
-    ad.mbs.btPairDevice(address.upper())
+    ad.mbs.btStopAutoAcceptIncomingPairRequest()
+  except snippet_errors.ApiError:
+    pass
+
+
+def _confirm_pairing_dialog_if_present(
+    ad: android_device.AndroidDevice,
+) -> None:
+  """Clicks the positive Settings pairing dialog button if shown on screen."""
+  try:
+    if ad.uia(pkg='com.android.settings', res='android:id/alertTitle').exists:
+      confirm_btn = ad.uia(
+          pkg='com.android.settings', res='android:id/button1'
+      )
+      if confirm_btn.exists:
+        logging.info('Confirming Settings Bluetooth pairing dialog via UI.')
+        confirm_btn.click()
+  except Exception:  # pylint: disable=broad-except
+    logging.debug('Pairing dialog UI check skipped.', exc_info=True)
+
+
+def mbs_pair_with_retry(ad: android_device.AndroidDevice, address: str) -> None:
+  target_address = address.upper()
+  try:
+    ad.mbs.btPairDevice(target_address)
     return
   except snippet_errors.ApiError:
-    logging.warning('BT pair failed once, retrying...')
-    pass  # Retry for the first failure
+    logging.warning(
+        'BT pair failed once for %s, re-discovering and retrying...',
+        target_address,
+    )
 
-  ad.mbs.btPairDevice(address.upper())
+  assert_device_discovered(ad, target_address)
+  ad.mbs.btPairDevice(target_address)
 
 
 def mbs_pair_devices(
     ad: android_device.AndroidDevice, address: str, secondary_address: str = ''
 ) -> None:
   """Pairs the Android and reference device using MBS."""
+  primary_addr = address.upper()
+  secondary_addr = secondary_address.upper() if secondary_address else ''
   ad.adb.shell('input keyevent KEYCODE_WAKEUP')
-  initial_name = assert_device_discovered(ad, address)
-  logging.info(f'Discovered target device, name: {initial_name}')
+  initial_name = assert_device_discovered(ad, primary_addr)
+  logging.info(
+      'Discovered target device %s, name: %s', primary_addr, initial_name
+  )
 
-  # # Disable FastPair halfsheet
-  # while ad.uia(res=_FAST_PAIR_HALFSHEET_IMAGE_ID).wait.exists(
-  #     _WAIT_FOR_FP_HALFSHEET
-  # ):
-  #   logging.info('Found FP halfsheet, pressed.')
-  #   ad.uia.press.back()
-  #   time.sleep(_DELAY_TIME_FOR_OPERATION.total_seconds())
-
-  mbs_pair_with_retry(ad, address)
-  logging.info('Devices paired.')
+  mbs_pair_with_retry(ad, primary_addr)
+  logging.info('Primary device %s paired.', primary_addr)
 
   assert_device_bonded_via_address(
       ad,
-      address,
-      fail_message=f'Failed to confirm Bluetooth {address} is paired',
+      primary_addr,
+      fail_message=f'Failed to confirm Bluetooth {primary_addr} is paired',
   )
-  if secondary_address:
-    assert_device_bonded_via_address(
-        ad,
-        secondary_address,
-        fail_message=f'Failed to confirm Bluetooth {secondary_address} is paired',
-    )
+  if secondary_addr:
+    ad.mbs.btStartAutoAcceptIncomingPairRequest()
+    rearmed = False
+    start_ts = time.perf_counter()
+    try:
+      def check_secondary_bonded() -> bool:
+        nonlocal rearmed
+        paired_addrs = {
+            d['Address'].upper() for d in ad.mbs.btGetPairedDevices()
+        }
+        if secondary_addr in paired_addrs:
+          return True
+        _confirm_pairing_dialog_if_present(ad)
+        if not rearmed and (time.perf_counter() - start_ts) >= 35.0:
+          _stop_auto_accept_pair_request(ad)
+          ad.mbs.btStartAutoAcceptIncomingPairRequest()
+          rearmed = True
+        return False
+
+      assert_wait_condition_true(
+          check_secondary_bonded,
+          timeout=_CSIP_PAIR_TIMEOUT,
+          fail_message=(
+              f'Failed to confirm Bluetooth {secondary_addr} is paired'
+          ),
+      )
+    finally:
+      _stop_auto_accept_pair_request(ad)
 
 
 def assert_wait_condition_true(
@@ -376,7 +463,7 @@ def assert_device_connected(
 
   def check_device_connected() -> bool:
     connected_device_list = [
-        device['Address'] for device in ad.mbs.btA2dpGetConnectedDevices()
+        device['Address'].upper() for device in ad.mbs.btA2dpGetConnectedDevices()
     ]
     logging.debug(
         '[assert_device_connected] Connected device list: %s',
@@ -408,7 +495,7 @@ def assert_device_disconnected(
 
   def check_device_disconnected() -> bool:
     connected_device_list = [
-        device['Address'] for device in ad.mbs.btA2dpGetConnectedDevices()
+        device['Address'].upper() for device in ad.mbs.btA2dpGetConnectedDevices()
     ]
     logging.debug(
         '[assert_device_disconnected] Connected device list: %s',
@@ -444,7 +531,10 @@ def assert_device_name_update(
   def check_device_name_update() -> bool:
     connected_device_list = ad.mbs.btA2dpGetConnectedDevices()
     for device in connected_device_list:
-      if device['Address'] == address and device['Name'] != initial_name:
+      if (
+          device['Address'].upper() == address.upper()
+          and device['Name'] != initial_name
+      ):
         logging.info(
             '[assert_device_name_update] Device name changed: %s',
             device['Name'],
@@ -453,7 +543,10 @@ def assert_device_name_update(
     return False
 
   assert_wait_condition_true(
-      check_device_name_update, timeout, assert_if_failed, fail_message
+      check_device_name_update,
+      timeout=timeout,
+      fail_message=fail_message,
+      assert_if_failed=assert_if_failed,
   )
 
 
@@ -630,7 +723,7 @@ def is_media_route_on_lea(
     ad: android_device.AndroidDevice, target_address: str
 ) -> bool:
   """Returns True if the media route is on LE Audio device, False otherwise."""
-  return ad.mbs.media3IsLeaStreamActive() and ad.mbs.btIsLeAudioConnected(target_address)
+  return ad.mbs.media3IsLeaStreamActive() and ad.mbs.btIsLeAudioConnected(target_address.upper())
 
 
 def ensure_screen_wake_up(
