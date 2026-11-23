@@ -15,10 +15,8 @@
 """A Mobly Test to test basic Bluetooth connection on Android + reference device."""
 
 import datetime
-import logging
 import time
 
-from mobly import asserts
 from mobly import test_runner
 from mobly import utils
 from mobly.controllers import android_device
@@ -54,62 +52,97 @@ class LEAConnectionTest(bt_base_test.BtRefBaseTest):
         self.ref_primary, self.ref_secondary, component_number=2
     )
 
+  def _are_both_lea_connected(self) -> bool:
+    return self.ad.mbs.btIsLeAudioConnected(
+        self.ref_primary.bluetooth_address
+    ) and self.ad.mbs.btIsLeAudioConnected(
+        self.ref_secondary.bluetooth_address
+    )
+
+  def _are_both_lea_disconnected(self) -> bool:
+    return not self.ad.mbs.btIsLeAudioConnected(
+        self.ref_primary.bluetooth_address
+    ) and not self.ad.mbs.btIsLeAudioConnected(
+        self.ref_secondary.bluetooth_address
+    )
+
   def setup_test(self) -> None:
     bluetooth_utils.mbs_pair_devices(
         self.ad,
         self.ref_primary.bluetooth_address,
         secondary_address=self.ref_secondary.bluetooth_address,
     )
-    
-    self.ad.mbs.btLeAudioConnect(self.ref_primary.bluetooth_address)
+    if not self.ad.mbs.btIsLeAudioConnected(self.ref_primary.bluetooth_address):
+      self.ad.mbs.btLeAudioConnect(self.ref_primary.bluetooth_address)
+    if not self.ad.mbs.btIsLeAudioConnected(
+        self.ref_secondary.bluetooth_address
+    ):
+      self.ad.mbs.btLeAudioConnect(self.ref_secondary.bluetooth_address)
 
   def test_lea_connect_disconnect(self) -> None:
     android_address = self.ad.mbs.btGetAddress()
-    #################################################################
-    # Trigger disconnection / reconnection from the android side.
-    #################################################################
-    self.ad.log.info('Connect LE Audio device.')
     bluetooth_utils.assert_wait_condition_true(
-        lambda: self.ad.mbs.btIsLeAudioConnected(
-          self.ref_primary.bluetooth_address
-        ),
+        self._are_both_lea_connected,
         _WAIT_BLUETOOTH_STATE_CHANGE,
-        'Fail to connect LE Audio device.'
+        'Fail to connect LE Audio device.',
+    )
+
+    #################################################################
+    # Trigger disconnection / reconnection from the Android side.
+    #################################################################
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    self.ad.log.info('Disconnect LE Audio device group from Android.')
+    if self.ad.mbs.btIsLeAudioConnected(self.ref_primary.bluetooth_address):
+      self.ad.mbs.btLeAudioDisconnect(self.ref_primary.bluetooth_address)
+    if self.ad.mbs.btIsLeAudioConnected(self.ref_secondary.bluetooth_address):
+      self.ad.mbs.btLeAudioDisconnect(self.ref_secondary.bluetooth_address)
+    bluetooth_utils.assert_wait_condition_true(
+        self._are_both_lea_disconnected,
+        _WAIT_BLUETOOTH_STATE_CHANGE,
+        'Fail to disconnect LE Audio device.',
     )
 
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-    self.ad.log.info('Disconnect LE Audio device.')
-    self.ad.mbs.btLeAudioDisconnect(self.ref_primary.bluetooth_address)
+    self.ad.log.info('Connect LE Audio device group from Android.')
+    self.ad.mbs.btLeAudioConnect(self.ref_primary.bluetooth_address)
+    if not self.ad.mbs.btIsLeAudioConnected(
+        self.ref_secondary.bluetooth_address
+    ):
+      self.ad.mbs.btLeAudioConnect(self.ref_secondary.bluetooth_address)
     bluetooth_utils.assert_wait_condition_true(
-        lambda: not self.ad.mbs.btIsLeAudioConnected(
-          self.ref_primary.bluetooth_address
-        ),
+        self._are_both_lea_connected,
         _WAIT_BLUETOOTH_STATE_CHANGE,
-        'Fail to disconnect LE Audio device.'
+        'Fail to connect LE Audio device.',
     )
 
     #################################################################
     # Trigger disconnection / reconnection from the reference side.
     #################################################################
-    # Disconnect the headset
+    # Disconnect both set members so LeAudioService does not treat a single
+    # member disconnect as a lost member of an active CSIP group.
     time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-    self.ref_primary.disconnect(android_address)
-    bluetooth_utils.assert_wait_condition_true(
-        lambda: not self.ad.mbs.btIsLeAudioConnected(
-          self.ref_primary.bluetooth_address
-        ),
-        _WAIT_BLUETOOTH_STATE_CHANGE,
-        'Fail to disconnect LE Audio device.'
+    utils.concurrent_exec(
+        lambda d: d.disconnect(android_address),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
     )
-    # Reconnect the headset
-    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
-    self.ref_primary.connect(android_address)
     bluetooth_utils.assert_wait_condition_true(
-        lambda: self.ad.mbs.btIsLeAudioConnected(
-          self.ref_primary.bluetooth_address
-        ),
+        self._are_both_lea_disconnected,
         _WAIT_BLUETOOTH_STATE_CHANGE,
-        'Fail to connect LE Audio device.'
+        'Fail to disconnect LE Audio device.',
+    )
+
+    # Reconnect the headset from the reference side.
+    time.sleep(_DELAYS_BETWEEN_ACTIONS.total_seconds())
+    utils.concurrent_exec(
+        lambda d: d.connect(android_address),
+        [[self.ref_primary], [self.ref_secondary]],
+        raise_on_exception=True,
+    )
+    bluetooth_utils.assert_wait_condition_true(
+        self._are_both_lea_connected,
+        _WAIT_BLUETOOTH_STATE_CHANGE,
+        'Fail to connect LE Audio device.',
     )
 
   def teardown_test(self) -> None:

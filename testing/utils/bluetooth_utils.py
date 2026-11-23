@@ -58,6 +58,17 @@ _WAIT_FOR_UI_UPDATE = datetime.timedelta(seconds=30)
 _INITIAL_PAIR_DISCOVER_TIME = datetime.timedelta(seconds=30)
 _SUBSEQUENT_PAIR_CONNECTION_TIME = datetime.timedelta(seconds=90)
 _CSIP_PAIR_TIMEOUT = datetime.timedelta(seconds=90)
+_PRIMARY_LE_UUID_WAIT = datetime.timedelta(seconds=35)
+_CSIP_INITIAL_PAIR_WAIT = datetime.timedelta(seconds=38)
+_UUID_REFRESH_TIMEOUT = datetime.timedelta(seconds=15)
+_GATT_CALLBACK_TIMEOUT_SEC = 15
+
+# Bluetooth transport, profile policy, and LE Audio UUID constants
+_TRANSPORT_LE = 2
+_CONNECTION_POLICY_ALLOWED = 100
+_CSIS_SERVICE_UUID = '00001846-0000-1000-8000-00805f9b34fb'
+_LE_AUDIO_SERVICE_UUID = '0000184e-0000-1000-8000-00805f9b34fb'
+_LEA_ENABLED_SERIALS: set[str] = set()
 
 # Error messages
 _CONDITION_NOT_TRUE_MSG = 'The condition is not true after timeout.'
@@ -203,8 +214,10 @@ def setup_android_device(
 
   # Prepare for LE Audio
   if enable_le_audio:
+    _LEA_ENABLED_SERIALS.add(ad.serial)
     set_bluetooth_le_audio(ad, True)
   else:
+    _LEA_ENABLED_SERIALS.discard(ad.serial)
     set_bluetooth_le_audio(ad, False)
 
   # Enable HCI log before loading snippets so Bluetooth service restart does not
@@ -321,12 +334,81 @@ def mbs_pair_with_retry(ad: android_device.AndroidDevice, address: str) -> None:
   ad.mbs.btPairDevice(target_address)
 
 
+def _has_required_le_uuids(
+    ad: android_device.AndroidDevice,
+    address: str,
+    require_csis: bool,
+) -> bool:
+  """Returns True if cached remote UUIDs include LE Audio and optional CSIS."""
+  uuids = {u.lower() for u in ad.mbs.btGetRemoteUuids(address)}
+  if _LE_AUDIO_SERVICE_UUID not in uuids:
+    return False
+  if require_csis and _CSIS_SERVICE_UUID not in uuids:
+    return False
+  return True
+
+
+def _refresh_le_uuids(
+    ad: android_device.AndroidDevice,
+    address: str,
+    require_csis: bool,
+) -> bool:
+  """Opens an encrypted LE GATT link and refreshes system LE service UUIDs."""
+  logging.info('Refreshing LE service UUIDs for %s...', address)
+  connected = False
+  try:
+    gatt_cb = ad.mbs.bleConnectGatt(address)
+    conn_event = gatt_cb.waitAndGet(
+        'onConnectionStateChange', timeout=_GATT_CALLBACK_TIMEOUT_SEC
+    )
+    if conn_event.data.get('newState') == 'STATE_CONNECTED':
+      connected = True
+      ad.mbs.bleDiscoverServices()
+      gatt_cb.waitAndGet(
+          'onServiceDiscovered', timeout=_GATT_CALLBACK_TIMEOUT_SEC
+      )
+
+      def poll_and_fetch_le_uuids() -> bool:
+        if _has_required_le_uuids(ad, address, require_csis):
+          return True
+        with contextlib.suppress(snippet_errors.Error):
+          ad.mbs.btFetchUuidsWithSdp(address, _TRANSPORT_LE)
+        return _has_required_le_uuids(ad, address, require_csis)
+
+      assert_wait_condition_true(
+          poll_and_fetch_le_uuids,
+          timeout=_UUID_REFRESH_TIMEOUT,
+          fail_message=f'Timed out refreshing LE UUIDs for {address}',
+          assert_if_failed=False,
+      )
+  except snippet_errors.Error:
+    logging.warning(
+        'GATT LE UUID refresh encountered a snippet error for %s.',
+        address,
+        exc_info=True,
+    )
+  finally:
+    if connected:
+      with contextlib.suppress(snippet_errors.Error):
+        ad.mbs.bleDisconnect()
+  return _has_required_le_uuids(ad, address, require_csis)
+
+
+def _is_address_paired(ad: android_device.AndroidDevice, address: str) -> bool:
+  """Returns True if the normalized address is in the Android bonded list."""
+  target = address.upper()
+  return any(
+      d['Address'].upper() == target for d in ad.mbs.btGetPairedDevices()
+  )
+
+
 def mbs_pair_devices(
     ad: android_device.AndroidDevice, address: str, secondary_address: str = ''
 ) -> None:
   """Pairs the Android and reference device using MBS."""
   primary_addr = address.upper()
   secondary_addr = secondary_address.upper() if secondary_address else ''
+  require_lea = bool(secondary_addr) or (ad.serial in _LEA_ENABLED_SERIALS)
   ad.adb.shell('input keyevent KEYCODE_WAKEUP')
   initial_name = assert_device_discovered(ad, primary_addr)
   logging.info(
@@ -341,34 +423,85 @@ def mbs_pair_devices(
       primary_addr,
       fail_message=f'Failed to confirm Bluetooth {primary_addr} is paired',
   )
+
+  if require_lea:
+    require_csis = bool(secondary_addr)
+    assert_wait_condition_true(
+        lambda: _has_required_le_uuids(ad, primary_addr, require_csis),
+        timeout=_PRIMARY_LE_UUID_WAIT,
+        fail_message=(
+            f'Initial LE UUID discovery timed out for primary {primary_addr}'
+        ),
+        assert_if_failed=False,
+    )
+    if not _has_required_le_uuids(ad, primary_addr, require_csis):
+      _refresh_le_uuids(ad, primary_addr, require_csis)
+      with contextlib.suppress(snippet_errors.Error):
+        ad.mbs.btSetProfileConnectionPolicy(
+            primary_addr, 'LE_AUDIO', _CONNECTION_POLICY_ALLOWED
+        )
+
   if secondary_addr:
     ad.mbs.btStartAutoAcceptIncomingPairRequest()
-    rearmed = False
-    start_ts = time.perf_counter()
     try:
       def check_secondary_bonded() -> bool:
-        nonlocal rearmed
-        paired_addrs = {
-            d['Address'].upper() for d in ad.mbs.btGetPairedDevices()
-        }
-        if secondary_addr in paired_addrs:
+        if _is_address_paired(ad, secondary_addr):
           return True
         _confirm_pairing_dialog_if_present(ad)
-        if not rearmed and (time.perf_counter() - start_ts) >= 35.0:
-          _stop_auto_accept_pair_request(ad)
-          ad.mbs.btStartAutoAcceptIncomingPairRequest()
-          rearmed = True
         return False
 
       assert_wait_condition_true(
           check_secondary_bonded,
-          timeout=_CSIP_PAIR_TIMEOUT,
+          timeout=_CSIP_INITIAL_PAIR_WAIT,
           fail_message=(
-              f'Failed to confirm Bluetooth {secondary_addr} is paired'
+              f'Initial automatic CSIP bonding timed out for {secondary_addr}'
           ),
+          assert_if_failed=False,
       )
     finally:
       _stop_auto_accept_pair_request(ad)
+
+    if not _is_address_paired(ad, secondary_addr):
+      logging.warning(
+          'Secondary %s not bonded after initial CSIP window; initiating direct'
+          ' LE bond retry...',
+          secondary_addr,
+      )
+      try:
+        ad.mbs.btCreateBondByTransport(secondary_addr, _TRANSPORT_LE)
+      except snippet_errors.Error:
+        logging.warning(
+            'Direct LE bond failed once for %s, retrying...', secondary_addr
+        )
+        ad.mbs.btCreateBondByTransport(secondary_addr, _TRANSPORT_LE)
+
+    assert_device_bonded_via_address(
+        ad,
+        secondary_addr,
+        timeout=_CSIP_PAIR_TIMEOUT,
+        fail_message=f'Failed to confirm Bluetooth {secondary_addr} is paired',
+    )
+    assert_wait_condition_true(
+        lambda: _has_required_le_uuids(ad, secondary_addr, require_csis=False),
+        timeout=_PRIMARY_LE_UUID_WAIT,
+        fail_message=(
+            f'Initial LE UUID discovery timed out for secondary {secondary_addr}'
+        ),
+        assert_if_failed=False,
+    )
+    if not _has_required_le_uuids(ad, secondary_addr, require_csis=False):
+      _refresh_le_uuids(ad, secondary_addr, require_csis=False)
+      with contextlib.suppress(snippet_errors.Error):
+        ad.mbs.btSetProfileConnectionPolicy(
+            secondary_addr, 'LE_AUDIO', _CONNECTION_POLICY_ALLOWED
+        )
+
+  if require_lea and not ad.mbs.btIsLeAudioConnected(primary_addr):
+    with contextlib.suppress(snippet_errors.Error):
+      ad.mbs.btLeAudioConnect(primary_addr)
+  if secondary_addr and not ad.mbs.btIsLeAudioConnected(secondary_addr):
+    with contextlib.suppress(snippet_errors.Error):
+      ad.mbs.btLeAudioConnect(secondary_addr)
 
 
 def assert_wait_condition_true(
